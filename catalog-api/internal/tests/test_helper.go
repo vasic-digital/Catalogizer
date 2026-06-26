@@ -703,7 +703,25 @@ func runTestMigrations(db *sql.DB) error {
 			UNIQUE(content_type, content_id, language)
 		)`,
 
+
+		// Share identity bindings table (identity-share-discovery epic)
+		`CREATE TABLE IF NOT EXISTS share_identity_bindings (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			host TEXT NOT NULL,
+			share_name TEXT NOT NULL,
+			protocol TEXT NOT NULL DEFAULT 'smb',
+			identity_index INTEGER NOT NULL DEFAULT 0,
+			identity_label TEXT NOT NULL,
+			last_ok_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE(host, share_name, protocol)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_share_identity_host ON share_identity_bindings (host)`,
+		`CREATE INDEX IF NOT EXISTS idx_share_identity_last_ok ON share_identity_bindings (last_ok_at)`,
+
 		// Insert default test user
+
 		`INSERT OR IGNORE INTO users (id, username, email, is_active) VALUES (1, 'testuser', 'test@example.com', 1)`,
 		`INSERT OR IGNORE INTO users (id, username, email, is_active) VALUES (2, 'testuser2', 'test2@example.com', 1)`,
 	}

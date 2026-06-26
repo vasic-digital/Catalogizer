@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Identity Share Discovery Design</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Identity Share Discovery Design</h1>
+</header>
+<h1
+id="identity-management-network-share-discovery-design-survey">Identity
+Management + Network-Share Discovery — Design &amp; Survey</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-26T00:00:00Z <strong>Status:</strong> DRAFT (design + survey
+pass — no implementation) <strong>Authority:</strong> Operator
+capability request 2026-06-26; constitution §11.4.74 (catalogue-first),
+§11.4.150 (deep multi-angle research), §11.4.10 (credentials), §11.4.58
+(PWU), §11.4.169 (test-type coverage), §11.4.162 (OpenDesign)
+<strong>Scope:</strong> catalog-api (Go backend) + catalog-web +
+catalogizer-desktop + catalogizer-android + catalogizer-androidtv +
+installer-wizard <strong>Classification note:</strong> This is a
+project-specific instantiation; the reusable pieces live in owned
+submodules (§11.4.28/§11.4.74).</p>
+<blockquote>
+<p>⚠️ This document references credential material by <strong>env-var
+NAME only</strong> (never a value), per §11.4.10. No secret value
+appears anywhere below.</p>
+</blockquote>
+<hr />
+<h2 id="capability-verbatim-operator-intent">0. Capability (verbatim
+operator intent)</h2>
+<blockquote>
+<p>“We provide identities; the System scans the network and all
+interfaces and protocols we support for available hosts and shares; each
+share is accessed first with NO credentials (anonymous), then with every
+added identity until one passes/logs in. We remember the (share,
+identity) combinations that work together. Extend the System for proper
+IDENTITY MANAGEMENT — an identity can be credentials
+(username+password), an API token, or other common auth means; support
+them ALL. Then extend the catalog with all detected network shares,
+track all duplicates, group everything so the user can easily browse,
+search and filter. Proper UI/UX and System support MUST exist.”</p>
+</blockquote>
+<p>Decomposed into five capability pillars:</p>
+<ol type="1">
+<li><strong>Identity management</strong> — extensible, multi-scheme
+identity store (credentials / api_token / ssh_key / …).</li>
+<li><strong>Network discovery</strong> — enumerate hosts across every
+interface + protocol, then enumerate shares per host.</li>
+<li><strong>Anonymous-first auth probing</strong> — try each share
+anonymous, then each identity in order until one authenticates;
+<strong>remember the working <code>(share, identity, protocol)</code>
+binding</strong>.</li>
+<li><strong>Catalog extension</strong> — auto-register every discovered
+share as a source, ingest media, track duplicates, group for
+browse/search/filter.</li>
+<li><strong>UI/UX</strong> — identity-manager screen + discovered-shares
+screen + grouped/deduped browse, per app, OpenDesign-tokened
+light+dark.</li>
+</ol>
+<hr />
+<h2 id="current-state-survey-11.4.74-fileline-evidence">1. Current-State
+Survey (§11.4.74, file:line evidence)</h2>
+<h3 id="how-shares-are-discovered-scanned-today">1.1 How shares are
+discovered / scanned today</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Where</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Host discovery (announce/respond)</strong></td>
+<td><code>catalog-api/main.go:771-795</code> —
+<code>digital.vasic.discovery/pkg/broadcast</code> Announcer + Responder
+(UDP multicast, namespace <code>catalogizer</code>). This
+<strong>announces the catalog-api service</strong>, it does NOT scan for
+NAS hosts.</td>
+<td>Service-presence only — not host/share inventory</td>
+</tr>
+<tr>
+<td><strong>TCP reachability probe</strong></td>
+<td><code>catalog-api/main.go:85-95</code> —
+<code>digital.vasic.containers/pkg/discovery.NewTCPDiscoverer()</code>
+probes a single configured target.</td>
+<td>Point probe, not a sweep</td>
+</tr>
+<tr>
+<td><strong>Network host+SMB scanner (CIDR sweep)</strong></td>
+<td><code>submodules/discovery/pkg/scanner</code> (<code>Scanner</code>
+iface: <code>Scan</code>/<code>ScanHost</code>) +
+<code>submodules/discovery/pkg/smb/scanner.go</code> (ports 445/139,
+concurrent, semaphore-limited, CIDR expansion).</td>
+<td><strong>EXISTS but UNWIRED into catalog-api</strong> — the reuse
+anchor for host/share sweep</td>
+</tr>
+<tr>
+<td><strong>SMB share enumeration on a host</strong></td>
+<td><code>catalog-api/internal/services/smb_discovery.go:57-95</code>
+<code>DiscoverShares()</code> — connects 445, NTLM session,
+<code>enumerateShares()</code> mounts known share names.</td>
+<td>Works, but <strong>guessing-based</strong> (see below)</td>
+</tr>
+<tr>
+<td><strong>SMB connection test</strong></td>
+<td><code>internal/services/smb_discovery.go:178-225</code>
+<code>TestConnection()</code> — dials, mounts share,
+<code>ReadDir(".")</code>.</td>
+<td>Solid positive-evidence probe</td>
+</tr>
+<tr>
+<td><strong>Existing discovery HTTP routes</strong></td>
+<td><code>catalog-api/main.go:1267-1271</code> —
+<code>POST/GET /api/v1/.../smb/discover</code>, <code>/smb/test</code>,
+<code>/smb/browse</code> →
+<code>handlers.SMBDiscoveryHandler</code>.</td>
+<td>SMB-only, operator-supplied creds, no anon-first, no multi-identity,
+no remembering</td>
+</tr>
+<tr>
+<td><strong>Scan engine (per protocol)</strong></td>
+<td><code>internal/services/universal_scanner.go:19-67</code> —
+<code>UniversalScanner</code> with <code>ProtocolScanner</code> registry
++ <code>filesystem.ClientFactory</code>; <code>ScanJob</code> keyed on
+<code>*models.StorageRoot</code>.</td>
+<td>Generic, protocol-pluggable — the ingest target</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Critical anti-bluff finding (§11.4.6 / §11.4.107):</strong>
+<code>smb_discovery.go:140-175 getCommonShares()</code> returns a
+<strong>hard-coded list of guessed share names</strong>
+(<code>shared</code>, <code>public</code>, <code>media</code>,
+<code>music</code>, …) as a fallback “when host unreachable” (line
+169-172 returns them even when <code>len(accessibleShares)==0</code>).
+This is a guessing path that can surface non-existent shares as
+discovered. The new pipeline MUST replace guess-fallback with honest
+“host unreachable / no shares enumerable → SKIP-with-reason” (§11.4.3)
+and only ever report a share proven mountable.</p>
+<h3 id="protocols-actually-supported-today">1.2 Protocols actually
+supported today</h3>
+<p><code>catalog-api/filesystem/interface.go:1-16</code> aliases
+<code>digital.vasic.filesystem/pkg/client</code>.
+<code>filesystem/factory.go:15-50+</code> <code>CreateClient()</code>
+switches on <code>config.Protocol</code>:</p>
+<ul>
+<li><strong>smb</strong> (445, go-smb2 NTLM) —
+<code>factory.go:18-27</code>, low-level in
+<code>catalog-api/filesystem/smb_client.go:38-73</code></li>
+<li><strong>ftp</strong> (21, jlaffaye/ftp) —
+<code>factory.go:29-37</code></li>
+<li><strong>nfs</strong> (v3, build-tag gated
+<code>nfs_client_darwin.go</code>/<code>_windows.go</code>) —
+<code>factory.go:39-50</code></li>
+<li><strong>webdav</strong>
+(<code>catalog-api/filesystem/webdav_client.go</code>) — factory
+continues past line 50</li>
+<li><strong>local</strong> (path-traversal guarded)</li>
+</ul>
+<p>So today the supported protocol set is <strong>SMB, FTP, NFS, WebDAV,
+local</strong>. Only <strong>SMB</strong> has a discovery/probe path
+(<code>smb_discovery.go</code>). FTP/NFS/WebDAV/local have working
+<em>clients</em> but no <em>discovery/probe</em> surface.</p>
+<h3 id="how-authentication-is-handled-for-a-sharesource-today">1.3 How
+authentication is handled for a share/source today</h3>
+<ul>
+<li><strong>Model:</strong>
+<code>catalog-api/models/file.go:48-70</code>
+<code>StorageRoot{ … Username *string; Password *string; Domain *string … }</code>
+— <strong>credentials are embedded per share record</strong>,
+plaintext.</li>
+<li><strong>DB:</strong> <code>storage_roots</code> table —
+<code>database/migrations/000001_initial_schema.sqlite.up.sql:4-26</code>
++ <code>…up.sql:5-27</code>. Columns <code>username TEXT</code>,
+<code>password TEXT</code>, <code>domain TEXT</code> stored
+<strong>plaintext</strong> (§11.4.10 gap).</li>
+<li><strong>Read path:</strong>
+<code>handlers/scan_handler.go:294-308 loadStorageRoot()</code>
+<code>SELECT … username, password, domain …</code>; root-set query
+<code>main.go:377-416</code>
+(<code>SELECT … username, password … FROM storage_roots WHERE protocol='smb' AND enabled=1</code>).</li>
+<li><strong>Client construction:</strong>
+<code>handlers/copy.go:326 createSmbClient()</code>,
+<code>factory.go:18-27</code> build the client straight from the
+per-root username/password.</li>
+<li><strong>No identity abstraction:</strong> credentials cannot be
+shared across shares, cannot be rotated centrally, are not
+anonymous-first, and there is no “try identities in order” logic
+anywhere.</li>
+</ul>
+<h3 id="the-catalog-data-model-source-media">1.4 The catalog data model
+(source ↔︎ media)</h3>
+<ul>
+<li><strong>Source = <code>storage_roots</code></strong>
+(<code>models/file.go:48-70</code>). One row per configured
+share/root.</li>
+<li><strong>Files → source FK:</strong>
+<code>files.storage_root_id</code> references
+<code>storage_roots(id)</code>
+(<code>migrations/000001_initial_schema.up.sql:55</code>, index
+<code>idx_files_storage_root_path</code> line 109).</li>
+<li><strong>Scan history → source FK:</strong>
+<code>scan_history.storage_root_id</code> (<code>…up.sql:105</code>,
+index line 114).</li>
+<li><strong>Aggregation to entities:</strong>
+<code>internal/services/aggregation_service.go:60-67 AggregateAfterScan(storageRootID)</code>
+walks media-bearing leaf files → <code>MediaItem</code> entities at
+<strong>title granularity</strong> (DEFECT-E fix,
+<code>aggregation_service.go:60-66</code> comment); repos
+<code>MediaItemRepository</code>, <code>MediaFileRepository</code>,
+<code>DirectoryAnalysisRepository</code>,
+<code>ExternalMetadataRepository</code>.</li>
+</ul>
+<h3 id="existing-duplicate-tracking-grouping-reuse-dont-reinvent">1.5
+Existing duplicate-tracking + grouping (reuse, don’t reinvent)</h3>
+<ul>
+<li><strong>Dedup engine:</strong>
+<code>internal/services/duplicate_detection_service.go:15-90</code> —
+<code>DuplicateDetectionService</code>,
+<code>DuplicateGroup{PrimaryItem, DuplicateItems, Confidence, DetectionMethod, MatchTypes, Status}</code>,
+<code>DuplicateItem{FileHash, FileSize, ExternalIDs, Fingerprints, …}</code>,
+similarity stack (<code>SimilarityAnalysis</code>,
+<code>TextSimilarityMetrics</code>: Levenshtein / JaroWinkler / Cosine /
+Jaccard / LCS / Soundex / Metaphone). <strong>This already solves “same
+content across shares”.</strong></li>
+<li><strong>Grouping for browse:</strong>
+<code>aggregation_service.go</code> already collapses files into
+title-level <code>MediaItem</code>s. Multi-source dedup must feed these
+so one title with copies on 3 shares shows once with 3 origins.</li>
+</ul>
+<h3 id="app-uis-for-sourceshare-config-login-current">1.6 App UIs for
+source/share config + login (current)</h3>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>App</th>
+<th>Stack / tokens</th>
+<th>Source/share config UI</th>
+<th>Identity UI</th>
+<th>API path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>installer-wizard</strong></td>
+<td>Tauri2 + React + Tailwind/shadcn</td>
+<td><code>src/components/wizard/SMBConfigurationStep.tsx:26-478</code>
+(host/port/share/user/pwd/domain + Test),
+<code>NFSConfigurationStep.tsx:23-395</code>;
+<code>contexts/ConfigurationContext.tsx</code> already models
+<code>ConfigurationAccess{type:'credentials',account,secret}</code>
+separate from <code>ConfigurationSource{type,url,access}</code> —
+<strong>the closest existing identity↔︎source split</strong></td>
+<td>per-source creds only</td>
+<td>Tauri IPC <code>testSMBConnection/testNFSConnection</code></td>
+</tr>
+<tr>
+<td><strong>catalogizer-desktop</strong></td>
+<td>Tauri2 + React + Tailwind</td>
+<td><code>src/pages/SettingsPage.tsx:24-114</code> SMB config list
+(add/delete) + server URL test</td>
+<td>none</td>
+<td><code>apiService.getSMBConfigs/createSMBConfig/deleteSMBConfig</code></td>
+</tr>
+<tr>
+<td><strong>catalog-web</strong></td>
+<td>React18 + Tailwind/shadcn + React Query + Zustand</td>
+<td><code>src/pages/Settings.tsx:34-101</code> scans + storage-root
+selector; <code>lib/api.ts</code> exposes <code>smbApi</code>,
+<code>scansApi</code>, <code>syncApi</code></td>
+<td>none (<code>LoginForm.tsx</code>)</td>
+<td>Axios <code>/api/v1</code>, Bearer interceptor</td>
+</tr>
+<tr>
+<td><strong>catalogizer-androidtv</strong></td>
+<td>Compose-for-TV + Material3, <strong>OpenDesign-aligned</strong>
+(<code>ui/theme/Theme.kt</code>)</td>
+<td>none (login + server discovery only
+<code>ui/screens/login/LoginScreen.kt:224-270,538-583</code>)</td>
+<td>none; <code>SettingsScreen.kt</code> toggles only</td>
+<td>Retrofit <code>CatalogizerApi.kt:14-49</code> auth-only</td>
+</tr>
+<tr>
+<td><strong>catalogizer-android</strong></td>
+<td>Compose + Material3</td>
+<td>none</td>
+<td>none (<code>LoginScreen.kt</code>)</td>
+<td>Retrofit</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Gaps:</strong> No app has a dedicated <strong>identity
+manager</strong>. OpenDesign tokens are referenced <strong>only</strong>
+in Android TV (§11.4.162 gap for web/desktop/phone). The
+installer-wizard’s <code>Access</code>↔︎<code>Source</code> separation is
+the conceptual seed to lift backend-side.</p>
+<h3 id="env-identity-keys-defined-but-unwired">1.7 <code>.env</code>
+identity keys — defined but UNWIRED</h3>
+<p><code>.env.example:46-65</code> defines (NAMES only):
+<code>CATALOGIZER_IDENTITY_COUNT</code>,
+<code>CATALOGIZER_IDENTITY_&lt;N&gt;_TYPE</code>,
+<code>_USERNAME</code>, <code>_PASSWORD</code>, <code>_TOKEN</code>,
+<code>_KEY_PATH</code>, <code>_PASSPHRASE</code>.
+<strong><code>grep CATALOGIZER_IDENTITY</code> over <code>*.go</code> =
+ZERO hits.</strong> The identity contract exists only as documentation;
+<strong>no code consumes it.</strong> <code>.env</code> is gitignored
+(<code>.gitignore:45-48,319-320,328</code>). This is the central
+greenfield wiring gap.</p>
+<h3 id="catalogue-check-reusable-owned-submodules">1.8 §11.4.74
+Catalogue-Check — reusable owned submodules</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Submodule (module path)</th>
+<th>Provides</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>submodules/discovery</code>
+(<code>digital.vasic.discovery</code>)</td>
+<td><code>pkg/scanner</code> host sweep, <code>pkg/smb</code> SMB
+scanner (445/139, CIDR), <code>pkg/broadcast</code> mDNS/UDP,
+<code>pkg/report</code></td>
+<td><strong>REUSE + EXTEND</strong> (add NFS/FTP/WebDAV scanners via
+<code>Scanner</code> iface)</td>
+</tr>
+<tr>
+<td><code>submodules/auth</code> (<code>digital.vasic.auth</code>)</td>
+<td><code>pkg/jwt</code>, <code>pkg/apikey</code> (<code>KeyStore</code>
+iface), <code>pkg/oauth</code>
+(<code>CredentialReader</code>/<code>TokenRefresher</code>/<code>AutoRefresher</code>),
+<code>pkg/token</code> (<code>Store</code>)</td>
+<td><strong>REUSE</strong> as the identity credential-scheme backbone;
+<strong>EXTEND</strong> with ssh_key + raw-credentials schemes</td>
+</tr>
+<tr>
+<td><code>submodules/filesystem</code>
+(<code>digital.vasic.filesystem</code>)</td>
+<td><code>pkg/client</code> 5-protocol clients +
+<code>pkg/factory</code></td>
+<td><strong>REUSE</strong> (already aliased by catalog-api)</td>
+</tr>
+<tr>
+<td><code>submodules/security</code>
+(<code>digital.vasic.security</code>)</td>
+<td><code>pkg/securestorage</code> (encrypted at-rest),
+<code>pkg/pii</code> redactor, <code>pkg/e2ee</code></td>
+<td><strong>EXTEND</strong> — encrypt identity secrets at rest + redact
+hosts/users in logs</td>
+</tr>
+<tr>
+<td><code>submodules/database</code>
+(<code>digital.vasic.database</code>)</td>
+<td><code>pkg/repository[T]</code>, sqlite/postgres adapters,
+<code>pkg/migration</code></td>
+<td><strong>REUSE</strong> for new tables</td>
+</tr>
+<tr>
+<td><code>submodules/config</code>
+(<code>digital.vasic.config</code>)</td>
+<td><code>pkg/env</code> struct-tag env loader</td>
+<td><strong>REUSE</strong> to parse
+<code>CATALOGIZER_IDENTITY_*</code></td>
+</tr>
+<tr>
+<td><code>submodules/media</code>, <code>submodules/watcher</code>,
+<code>submodules/entities</code></td>
+<td>metadata extraction / incremental watch / shared models</td>
+<td><strong>EXTEND</strong> (post-discovery ingest)</td>
+</tr>
+<tr>
+<td><code>submodules/challenges</code>,
+<code>submodules/helix_qa</code></td>
+<td>Challenge bank + autonomous QA</td>
+<td><strong>REUSE</strong> for §11.4.169 coverage</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Conclusion:</strong> ~80%+ of the building blocks exist. The
+new work is <strong>composition + the missing identity/probe/remember
+logic + the 5 app UIs</strong>, NOT new infrastructure.</p>
+<hr />
+<h2 id="proposed-design">2. Proposed Design</h2>
+<h3 id="identity-model-extensible-multi-scheme">2.1 Identity model
+(extensible, multi-scheme)</h3>
+<p>A first-class <strong>Identity</strong> decoupled from any share:</p>
+<pre><code>Identity {
+  id            int64
+  name          string            // operator-facing label, e.g. &quot;nas-admin&quot;
+  type          string            // credentials | api_token | ssh_key | webdav_basic | oauth2 | anonymous(synthetic)
+  // scheme-specific fields, encrypted at rest (security/pkg/securestorage):
+  username      *string
+  secret_ref    *string           // opaque handle into the secret store; NEVER the raw secret in this row
+  domain        *string           // SMB
+  key_path      *string           // ssh_key
+  token_ref     *string           // api_token (handle, not the token)
+  enabled       bool
+  priority      int               // order to try during probing (lower = first)
+  created_at / updated_at
+}</code></pre>
+<ul>
+<li><strong>Pluggable <code>AuthScheme</code> interface</strong> (Go):
+<code>Probe(ctx, client filesystem.FileSystemClient, share ShareTarget, id Identity) (ok bool, evidence ProbeEvidence, err error)</code>.
+One implementation per type. New scheme = new struct registered in a
+registry (open/closed). This mirrors <code>universal_scanner.go</code>’s
+<code>ProtocolScanner</code> registry pattern
+(<code>universal_scanner.go:64-67</code>) for consistency.</li>
+<li><strong>Loader sources (precedence, §11.4.6 deterministic):</strong>
+(1) <code>CATALOGIZER_IDENTITY_*</code> env via
+<code>digital.vasic.config/pkg/env</code> → seeds the identity table on
+boot; (2) identities added via UI/API at runtime; (3) the synthetic
+<strong><code>anonymous</code></strong> identity (priority 0, always
+tried first, no secret).</li>
+<li><strong>Secrets never logged</strong> (§11.4.10): the table stores
+only <code>*_ref</code> handles; raw secrets live in
+<code>security/pkg/securestorage</code> (encrypted) or, on platforms
+with one, the OS keystore (see §2.6). Env-loaded secrets are read once,
+written to the secret store, and the env value is not echoed.</li>
+</ul>
+<h3
+id="discovery-pipeline-anonymous-first-identity-fallback-remember">2.2
+Discovery pipeline (anonymous-first, identity-fallback, remember)</h3>
+<pre><code>[1 ENUMERATE HOSTS]  every interface × method:
+     mDNS/Bonjour (discovery/pkg/broadcast) ∪ NetBIOS/WS-Discovery ∪ ARP/subnet CIDR sweep
+     (discovery/pkg/scanner) ∪ operator-configured static hosts
+            │  → set of reachable Host{ip, hostname, ifaces}
+[2 ENUMERATE SHARES per host per protocol]
+     SMB: discovery/pkg/smb (445/139) → share list (REAL enumeration, NOT guessed §1.1)
+     FTP/NFS/WebDAV: connect + list root (extend discovery with per-protocol probers)
+            │  → set of ShareTarget{host, protocol, share/path, port}
+[3 PROBE AUTH — anonymous-first, then identities by priority]
+     for each ShareTarget:
+        try anonymous → if mount+ReadDir(&quot;.&quot;) OK (positive evidence, smb_discovery.go:209-221 pattern) → BIND
+        else for each enabled Identity ordered by priority:
+            AuthScheme.Probe(...) → first success → BIND, stop
+        else → record UNAUTHENTICATED (honest, no guess)
+[4 REMEMBER]
+     persist working ShareBinding{share_target, identity_id, protocol, last_ok_at, probe_evidence_path}
+[5 REGISTER + INGEST]
+     upsert a storage_roots row per bound share (credentials via identity ref, not inline)
+     → UniversalScanner.ScanJob → AggregateAfterScan → DuplicateDetection</code></pre>
+<p><strong>Single-resource discipline (§11.4.119):</strong> probing is
+read-only and rate-limited (reuse discovery’s semaphore); never write to
+a probed host. <strong>Honest unreachable handling
+(§11.4.3/§11.4.6):</strong> a host that does not answer is logged
+offline, never substituted with guessed shares (removes the
+<code>getCommonShares</code> guess path).</p>
+<h3 id="persistence-reuse-schema-new-tables">2.3 Persistence + reuse
+schema (new tables)</h3>
+<pre><code>identities                 (§2.1 — secrets as *_ref handles only)
+discovered_hosts           (id, ip, hostname, first_seen, last_seen, reachable, ifaces_json)
+discovered_shares          (id, host_id FK, protocol, share_name/path, port, first_seen, last_seen,
+                            enumeration_evidence_path)
+share_identity_bindings    (id, share_id FK, identity_id FK, status ∈ {ok,unauthenticated,failed,revalidating},
+                            anonymous_ok bool, last_ok_at, last_attempt_at, probe_evidence_path,
+                            UNIQUE(share_id, identity_id))
+   └─ binding → storage_roots: storage_roots gains nullable identity_id FK (replaces inline user/pwd over time;
+      migration keeps existing inline creds working, new shares use identity_id — §11.4.124 no silent break)</code></pre>
+<ul>
+<li><strong>Re-validation cadence (§11.4.128/§11.4.144):</strong> a
+background follower re-probes each <code>ok</code> binding on a defined
+interval; on failure → <code>revalidating</code> → retry with the same
+identity, then re-run §2.2 step 3 (identity rotation). Drops logged
+honestly; never a silent stale “ok”.</li>
+<li><strong>Identity rotation/failure:</strong> changing an identity’s
+secret invalidates dependent bindings → marked
+<code>revalidating</code>, not deleted (§11.4.124
+investigate-before-remove).</li>
+<li><strong><code>storage_roots</code> back-compat:</strong> add
+<code>identity_id INTEGER NULL</code> + keep
+<code>username/password</code> columns during migration; resolver
+prefers <code>identity_id</code> when set, falls back to inline (so the
+existing <code>main.go:377-416</code> SMB-root query path keeps working
+until migrated).</li>
+</ul>
+<h3 id="catalog-extension-register-dedup-group">2.4 Catalog extension —
+register, dedup, group</h3>
+<ol type="1">
+<li><strong>Auto-register:</strong> each <code>ok</code>
+<code>share_identity_binding</code> upserts a <code>storage_roots</code>
+row (<code>identity_id</code> set, <code>enabled=1</code>). Existing
+<code>UniversalScanner</code> +
+<code>AggregateAfterScan(storageRootID)</code>
+(<code>aggregation_service.go:60-67</code>) ingest unchanged.</li>
+<li><strong>Duplicate tracking across shares:</strong> feed scanned
+files to <code>DuplicateDetectionService</code>
+(<code>duplicate_detection_service.go</code>). Dedup key precedence:
+<strong>content hash</strong> (<code>DuplicateItem.FileHash</code>) →
+<strong>size + parsed-title + year/episode</strong> fuzzy (existing
+Levenshtein/JaroWinkler stack) → external IDs. A title present on N
+shares becomes ONE <code>MediaItem</code> with N <code>origins[]</code>
+(each origin = <code>{storage_root_id, share_id, path}</code>).</li>
+<li><strong>Grouping for browse:</strong> <code>MediaItem</code> already
+groups files by title; extend its DTO with <code>origins[]</code> +
+<code>duplicate_count</code> + <code>available_on_shares[]</code> so the
+UI shows one card with a per-origin source picker (and a “duplicate”
+badge).</li>
+<li><strong>Filter axes (new):</strong> by host, by share, by protocol,
+by identity, by “has duplicates”, by online/offline source — all
+derivable from the new tables joined to
+<code>files.storage_root_id</code>.</li>
+</ol>
+<h3
+id="uiux-per-app-opendesign-tokens-lightdark-no-overlap-11.4.162">2.5
+UI/UX per app (OpenDesign tokens, light+dark, no overlap —
+§11.4.162)</h3>
+<p>Three new surfaces, each app:</p>
+<ul>
+<li><strong>A. Identity Manager</strong> — list/add/edit/remove
+identities; type selector (credentials / api_token / ssh_key / …);
+scheme-specific fields; <strong>secrets masked</strong> (show/hide),
+never rendered in plaintext logs or list views; priority ordering.</li>
+<li><strong>B. Discovered Shares</strong> — grouped by host; per-share
+auth-status chip (<code>anonymous</code> /
+<code>via &lt;identity&gt;</code> / <code>unauthenticated</code>); “scan
+network” action; per-share enable/ingest toggle.</li>
+<li><strong>C. Grouped/deduped Browse</strong> — existing catalog browse
++ duplicate badge + per-title origin/source picker + the §2.4
+filters.</li>
+</ul>
+<p><strong>Per-app mapping:</strong> - <strong>Android TV / phone
+(Compose, Material3):</strong> new <code>IdentityManagerScreen</code>,
+<code>DiscoveredSharesScreen</code> under <code>ui/screens/…</code>;
+reuse OpenDesign-aligned <code>Theme.kt</code>. D-pad focus order for TV
+(mirror <code>LoginScreen.kt</code> focus pattern). Extend
+<code>CatalogizerApi.kt</code> (Retrofit) with the new endpoints. -
+<strong>Web (React/Tailwind):</strong> new pages under
+<code>src/pages/</code> + <code>identitiesApi</code> in
+<code>lib/api.ts</code>; <strong>adopt OpenDesign tokens</strong>
+(currently Tailwind-only — §11.4.162 gap to close). - <strong>Desktop
+(Tauri/React):</strong> extend <code>SettingsPage.tsx</code> SMB section
+into the full identity/shares model; adopt OpenDesign tokens. -
+<strong>installer-wizard:</strong> evolve
+<code>ConfigurationContext</code>’s
+<code>Access</code>↔︎<code>Source</code> split (already present) into the
+identity model so first-run setup seeds identities.</p>
+<p><strong>Backend API (new, under <code>/api/v1</code>):</strong>
+<code>GET/POST/PUT/DELETE /identities</code> ·
+<code>POST /discovery/scan</code> (kick host+share sweep) ·
+<code>GET /discovery/hosts</code> · <code>GET /discovery/shares</code> ·
+<code>POST /discovery/shares/:id/probe</code>
+(anon-first+identity-fallback) ·
+<code>GET /catalog/items?has_duplicates=&amp;host=&amp;share=&amp;protocol=&amp;identity=</code>
+(extend existing browse). Bearer-auth + RBAC via
+<code>internal/auth/middleware.go</code>.</p>
+<h3 id="security-11.4.10-throughout">2.6 Security (§11.4.10
+throughout)</h3>
+<ul>
+<li>Secrets never in <code>storage_roots</code>/<code>identities</code>
+rows as plaintext → <code>*_ref</code> handles into
+<code>security/pkg/securestorage</code> (encrypted at rest), or OS
+keystore where available (macOS Keychain / Linux Secret Service /
+Android Keystore / Windows DPAPI) — <strong>§11.4.81 cross-platform
+parity</strong> with honest fallback to the encrypted file store.</li>
+<li><strong>Migrate the existing plaintext
+<code>storage_roots.password</code></strong> into the secret store as
+part of the migration (existing data is a current §11.4.10 debt).</li>
+<li>Secrets masked in all UIs; redact host/user via
+<code>security/pkg/pii</code> before any log line; <code>.env</code>
+stays gitignored; identity secrets never git-versioned; probe logs store
+evidence <strong>paths</strong>, not secret bytes.</li>
+<li><code>ssrf_guard.go</code>
+(<code>internal/services/ssrf_guard.go</code>) gates any host/URL the
+probe touches.</li>
+</ul>
+<hr />
+<h2 id="phased-implementation-plan-pwus-11.4.58">3. Phased
+Implementation Plan (PWUs — §11.4.58)</h2>
+<p>Each PWU ships four-layer coverage (§11.4.4(b)) + the §11.4.169
+test-type matrix + captured physical evidence
+(§11.4.5/§11.4.69/§11.4.107). “Evidence” column = the anti-bluff
+artifact each test MUST capture. Audio/video N/A here; evidence is JSON
+probe results, DB row deltas, captured network traffic, screen
+renders.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>PWU</th>
+<th>Scope (files)</th>
+<th>Test matrix (§11.4.169)</th>
+<th>Mandatory captured evidence (anti-bluff)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P1 — Identity store + env loader</strong></td>
+<td><code>catalog-api/internal/identity/*</code> (new), migration
+<code>00000X_identities</code>,
+<code>digital.vasic.config/pkg/env</code>,
+<code>security/pkg/securestorage</code> wiring; consume
+<code>CATALOGIZER_IDENTITY_*</code></td>
+<td>unit (scheme parse, precedence, masking), integration (env→DB seed,
+secret store round-trip), security (no plaintext secret in DB/logs —
+grep the row + log capture), stress (1000 identities), chaos (corrupt
+secret store → honest fail)</td>
+<td>DB dump showing <code>secret_ref</code> not raw secret; log capture
+proving redaction; <code>go test</code> JSON; paired §1.1 mutation
+(strip masking → security test FAILs)</td>
+</tr>
+<tr>
+<td><strong>P2 — Discovery/probe engine</strong></td>
+<td><code>catalog-api/internal/discovery/*</code> (new), reuse
+<code>submodules/discovery/pkg/{scanner,smb}</code>; replace
+<code>smb_discovery.go:140-175</code> guess-fallback with honest
+SKIP</td>
+<td>unit (host parse, anon-first ordering, identity fallback order),
+integration (probe against a <strong>containerized
+SMB/FTP/WebDAV</strong> booted via <code>vasic-digital/containers</code>
+§11.4.76/§11.4.161), e2e (scan→bind), full-automation (re-runnable
+§11.4.98), security (SSRF guard, rate-limit), stress (concurrent
+multi-host), chaos (host drops mid-probe → §11.4.144 offline event)</td>
+<td>captured probe <code>result.json</code> (per share: anonymous_ok /
+bound identity / unauthenticated); pcap or server-log proving real auth
+attempt; container boot log; mutation (force guess-fallback → test
+FAILs)</td>
+</tr>
+<tr>
+<td><strong>P3 — Remember/persistence + revalidation</strong></td>
+<td>migrations
+<code>discovered_hosts</code>/<code>discovered_shares</code>/<code>share_identity_bindings</code>;
+<code>storage_roots.identity_id</code>; follower goroutine</td>
+<td>unit (binding state machine), integration (bind persists, re-probe
+path, rotation→revalidating), e2e (restart → bindings reused, no re-auth
+storm), stress (N bindings revalidate), chaos (SIGKILL mid-write →
+recover), concurrency/atomicity (UNIQUE(share,identity))</td>
+<td>before/after DB snapshots; revalidation timeline log; mutation (drop
+UNIQUE → dup-binding test FAILs)</td>
+</tr>
+<tr>
+<td><strong>P4 — Catalog source registration + multi-source
+dedup/group</strong></td>
+<td>bind→<code>storage_roots</code> upsert;
+<code>UniversalScanner</code> ingest; extend
+<code>DuplicateDetectionService</code> for cross-share;
+<code>MediaItem.origins[]</code> DTO</td>
+<td>unit (origin merge, dedup key precedence), integration (same title
+on 2 container shares → 1 item, 2 origins), e2e (scan two shares →
+grouped), full-automation, stress (large corpus), benchmark (dedup p95
+vs baseline)</td>
+<td><code>result.json</code> showing 1 item / N origins + dedup
+confidence; query timing vs baseline; mutation (break hash-first dedup →
+duplicate-collapse test FAILs)</td>
+</tr>
+<tr>
+<td><strong>P5 — Backend API + RBAC</strong></td>
+<td>new <code>/identities</code>, <code>/discovery/*</code>, extended
+<code>/catalog/items</code> filters;
+<code>internal/auth/middleware.go</code></td>
+<td>unit (handlers), integration (auth required, RBAC), e2e (full REST
+flow), security (authz, injection, secret-leak in responses), DDoS/load
+(scan endpoint), API-readiness</td>
+<td>HTTP transcript (request/response, secrets masked); 401/403 negative
+cases; mutation (drop auth → security test FAILs)</td>
+</tr>
+<tr>
+<td><strong>P6 — App UI: Identity Manager + Discovered Shares + Grouped
+Browse</strong></td>
+<td>per-app screens §2.5; OpenDesign tokens for web/desktop/phone</td>
+<td>unit (components), UI-driven (§11.4.48), <strong>host-side
+rendered-pixel visual proof (§11.4.170 Roborazzi/Paparazzi/Playwright)
+light+dark + OCR layout oracle</strong>, e2e, full-automation (§11.4.143
+real journey), accessibility (WCAG-AA)</td>
+<td>rendered PNG per screen×state×{light,dark} + golden-diff + OCR
+no-overlap verdict; live-device recording (§11.4.159) MP4 + vision read;
+mutation (overlap inject → visual gate FAILs)</td>
+</tr>
+<tr>
+<td><strong>P7 — Wiring + full integration + HelixQA +
+Challenges</strong></td>
+<td>end-to-end glue; Challenge banks; HelixQA autonomous session</td>
+<td>Challenges (anon-first + remember + dedup), HelixQA full session,
+full-suite retest (§11.4.40), chaos+stress aggregate</td>
+<td>HelixQA <code>result.json</code> per bank; recorded autonomous
+session; §11.4.116 sync-channel event stream</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Cross-cutting per PWU:</strong> §11.4.146 reproduce-first RED
+on the broken/absent state → same-test GREEN → extend-to-all-cases;
+§11.4.150 deep multi-angle research footer; §11.4.125/§11.4.142
+independent review to clean GO (§11.4.134); §11.4.135 regression guard
+registered on every closure.</p>
+<h3 id="operator-gated-items-flag-honestly-11.4.311.4.21">3.1
+Operator-gated items (flag honestly, §11.4.3/§11.4.21)</h3>
+<ul>
+<li><strong>Real LAN NAS to probe with the provided identities</strong>
+— autonomous CI uses <strong>containerized</strong> SMB/FTP/NFS/WebDAV
+servers (§11.4.76) for deterministic proof; a <strong>real Synology/NAS
+sweep</strong> with <code>CATALOGIZER_IDENTITY_*</code> is
+<code>operator_attended</code> (needs the physical LAN + real hosts).
+NOT a faked PASS — a tracked migration item.</li>
+<li><strong>OS keystore on each platform</strong> (Keychain/Secret
+Service/Android Keystore/DPAPI) — may need per-platform operator setup;
+honest fallback to encrypted file store meanwhile (§11.4.81).</li>
+<li><strong>NFS on macOS/Windows</strong> — build-tag-gated today
+(<code>nfs_client_darwin.go</code>/<code>_windows.go</code>); per-OS
+parity needs validation (§11.4.81).</li>
+</ul>
+<hr />
+<h2 id="open-questions-for-the-operator-11.4.66">4. Open Questions for
+the Operator (§11.4.66)</h2>
+<ol type="1">
+<li><strong>Protocol scope, first cut:</strong> SMB is the only protocol
+with a discovery path today (<code>smb_discovery.go</code>). Do we ship
+<strong>SMB-first</strong> (P1–P5 SMB-only, then fan out FTP/NFS/WebDAV
+in P6+), or build all four probers up front? (Recommended: SMB-first —
+fastest to real evidence, lowest blast radius.)</li>
+<li><strong>Real hosts on the LAN:</strong> Is there a real Synology/NAS
+(or other SMB/NFS host) reachable on this LAN to probe with the
+<code>CATALOGIZER_IDENTITY_*</code> identities for §11.4.143/§11.4.159
+live evidence, or do we rely solely on containerized servers for
+autonomous proof and mark real-NAS as
+<code>operator_attended</code>?</li>
+<li><strong>Secret store:</strong> OS keystore (Keychain/Secret
+Service/Android Keystore/DPAPI) per platform, or the
+<code>security/pkg/securestorage</code> encrypted file store as the
+single cross-platform default? (Recommended: encrypted file store as
+default, keystore as opt-in per §11.4.81.)</li>
+<li><strong>Existing plaintext
+<code>storage_roots.password</code>:</strong> confirm we migrate it into
+the secret store and null the plaintext column (one-time data migration,
+§11.4.10 debt repayment) vs. leave inline-cred shares as legacy.</li>
+<li><strong>Anonymous-first safety:</strong> any hosts where an
+anonymous mount attempt is undesirable (e.g., would trip an
+IDS/lockout)? Should anonymous probing be opt-out per host?</li>
+<li><strong>OpenDesign rollout:</strong> web/desktop/phone are
+Tailwind/Material-only today — confirm closing the §11.4.162 token gap
+is in-scope for this capability (Recommended: yes, P6).</li>
+</ol>
+<hr />
+<h2 id="evidence-index-fileline-anchors-used-above">5. Evidence Index
+(file:line anchors used above)</h2>
+<ul>
+<li>Identity gap: <code>.env.example:46-65</code> (NAMES only) + zero
+<code>*.go</code> consumers</li>
+<li>Share model + creds: <code>catalog-api/models/file.go:48-70</code>;
+DB
+<code>database/migrations/000001_initial_schema.sqlite.up.sql:4-26</code></li>
+<li>Existing SMB discovery + guess-fallback:
+<code>catalog-api/internal/services/smb_discovery.go:57-95,140-175,178-225</code></li>
+<li>Discovery routes: <code>catalog-api/main.go:1267-1271</code>;
+multicast announce <code>main.go:771-795</code>; SMB root query
+<code>main.go:377-416</code></li>
+<li>Protocol clients:
+<code>catalog-api/filesystem/interface.go:1-16</code>,
+<code>filesystem/factory.go:15-50</code>,
+<code>filesystem/smb_client.go:38-73</code></li>
+<li>Scanner:
+<code>catalog-api/internal/services/universal_scanner.go:19-67</code></li>
+<li>Aggregation:
+<code>catalog-api/internal/services/aggregation_service.go:60-67</code></li>
+<li>Dedup:
+<code>catalog-api/internal/services/duplicate_detection_service.go:15-90</code></li>
+<li>Creds read path:
+<code>catalog-api/handlers/scan_handler.go:294-308</code>,
+<code>handlers/copy.go:326</code></li>
+<li>Owned submodules:
+<code>submodules/{discovery,auth,filesystem,security,database,config}/go.mod</code></li>
+<li>App UIs:
+<code>installer-wizard/src/components/wizard/SMBConfigurationStep.tsx:26-478</code>,
+<code>installer-wizard/src/contexts/ConfigurationContext.tsx</code>;
+<code>catalogizer-desktop/src/pages/SettingsPage.tsx:24-114</code>;
+<code>catalog-web/src/pages/Settings.tsx:34-101</code> +
+<code>src/lib/api.ts</code>;
+<code>catalogizer-androidtv/.../ui/screens/login/LoginScreen.kt:224-270,538-583</code>
++ <code>ui/theme/Theme.kt</code> +
+<code>data/remote/CatalogizerApi.kt:14-49</code></li>
+</ul>
+<hr />
+<h2 id="sources-verified-11.4.150-deep-research-note">6. Sources
+verified (§11.4.150 — deep-research note)</h2>
+<p>Design synthesized from in-repo evidence (above) + owned-submodule
+capabilities. External protocol/standard cross-references (SMB share
+enumeration via <code>srvsvc</code>/IPC$, mDNS/WS-Discovery host
+enumeration, anonymous-bind semantics, OS keystore APIs) are
+<strong>flagged for the per-PWU §11.4.150 deep-research pass</strong>
+before implementation — this is a design/survey doc, not a closure; no
+implementation decision here is final until that pass cites latest
+authoritative sources.
+<code>NO external solution adopted yet — original composition of owned submodules</code>.</p>
+</body>
+</html>
