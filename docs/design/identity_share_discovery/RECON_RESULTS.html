@@ -1,0 +1,130 @@
+<h1
+id="identity-share-discovery-real-nas-recon-results-2026-06-26">Identity-Share-Discovery
+— Real-NAS Recon Results (2026-06-26)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-26T11:05:00Z <strong>Authority:</strong>
+Identity-share-discovery epic; §11.4.6 (no-guessing), §11.4.10 (no
+secret values here — identities referenced by env-var only), §11.4.27
+(real-system test), §11.4.74. <strong>Anti-bluff:</strong> every row
+below is a captured FACT from a live SMB probe of the real LAN, not a
+guess.</p>
+<blockquote>
+<p>⚠️ No credential value appears in this document. Identities are
+referenced by env-var index only (<code>CATALOGIZER_IDENTITY_1/2</code>,
+user <code>milosvasic</code>).</p>
+</blockquote>
+<h2 id="method">Method</h2>
+<p>A recon probe (go-smb2, password read from env, never argv/log)
+dialed each SMB host on <code>192.168.0.0/24</code>, tried
+<strong>anonymous first</strong>, then each stored identity in order,
+and on success enumerated the <strong>real</strong> shares via SRVSVC
+<code>ListSharenames()</code>.</p>
+<h2 id="hosts-working-host-identity-real-shares-bindings-fact">Hosts +
+working (host, identity, real-shares) bindings — FACT</h2>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Host</th>
+<th>MAC OUI</th>
+<th>Anonymous</th>
+<th>Working identity</th>
+<th>Real shares (SRVSVC)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>192.168.0.108</td>
+<td><code>90:09:d0</code> = <strong>Synology</strong></td>
+<td>rejected (guest required)</td>
+<td>#1</td>
+<td><code>Data</code></td>
+</tr>
+<tr>
+<td>192.168.0.109</td>
+<td>Synology</td>
+<td>rejected</td>
+<td>#1</td>
+<td><code>DATA18</code></td>
+</tr>
+<tr>
+<td>192.168.0.110</td>
+<td>Synology</td>
+<td>rejected</td>
+<td>#1</td>
+<td><code>DATA12</code></td>
+</tr>
+<tr>
+<td>192.168.0.111</td>
+<td>Synology</td>
+<td>rejected</td>
+<td>#1</td>
+<td><code>DATA20</code>, <code>music</code>, <code>WORK20</code></td>
+</tr>
+<tr>
+<td>192.168.0.105</td>
+<td>—</td>
+<td>rejected</td>
+<td>#1</td>
+<td><code>Public</code>, <code>TimeMachineBackup</code></td>
+</tr>
+<tr>
+<td>192.168.0.213</td>
+<td>—</td>
+<td>rejected</td>
+<td><strong>#2</strong> (#1 fails)</td>
+<td><code>Public</code>, <code>Music</code>, <code>Projects</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="findings-that-drive-implementation">Findings that drive
+implementation</h2>
+<ol type="1">
+<li><strong>§11.4.6 anti-bluff fix landed (this PWU):</strong>
+<code>smb_discovery.go enumerateShares</code> previously
+<strong>guessed</strong> from a hardcoded common-name list
+(<code>shared/public/media/music/videos/data/...</code>) — it MISSED
+every real Synology share (<code>Data</code>, <code>DATA18</code>,
+<code>DATA12</code>, <code>DATA20</code>, <code>WORK20</code>,
+<code>Projects</code>). Replaced with real <code>ListSharenames()</code>
+SRVSVC enumeration (IPC$ filtered). Proven by
+<code>TestDiscoverShares_RealShares_NoGuessing</code> (§11.4.27
+real-system, §11.4.3 SKIP-gated, §11.4.115 RED-on-guessing →
+GREEN-on-fix).</li>
+<li><strong>Anonymous-first needs GUEST, not true-anonymous:</strong>
+go-smb2 rejects a true-anonymous bind (“Anonymous account is not
+supported yet. Use guest account instead”). The epic’s anon-first step
+MUST attempt a <strong>guest</strong> session, then fall through to
+identities.</li>
+<li><strong>Multi-identity fallback is real + required:</strong> host
+<code>.213</code> rejects identity #1 and authenticates only with
+identity #2 — exactly the “try each identity until one passes, remember
+the working binding” mechanic the operator specified. The remembered
+binding key is
+<code>(host, share, identity-index, protocol=smb)</code>.</li>
+<li><strong>Catalog ingest targets:</strong> the Synology media lives
+under <code>DATA*</code>/<code>WORK20</code>/<code>music</code> shares
+on <code>.108–.111</code> — these become <code>storage_roots</code> (one
+per working <code>(host, share, identity)</code>), scanned by
+<code>UniversalScanner</code> to populate the catalog (then dedup +
+group per epic pillars 4–5).</li>
+</ol>
+<h2 id="next-pwus-per-design.md">Next PWUs (per DESIGN.md)</h2>
+<ul>
+<li>Identity store (multi-scheme: credentials/api_token/ssh_key) +
+secure storage (no plaintext in <code>storage_roots</code> — §11.4.10
+debt).</li>
+<li>Guest/anon-first → multi-identity probe service + remembered-binding
+table.</li>
+<li>Auto-register working bindings as <code>storage_roots</code> → scan
+→ dedup → group.</li>
+<li>UI: identity-manager + discovered-shares + grouped browse
+(OpenDesign §11.4.162), per app.</li>
+<li>Full §11.4.169 test matrix.</li>
+</ul>

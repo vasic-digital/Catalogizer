@@ -94,31 +94,38 @@ func (s *SMBDiscoveryService) DiscoverShares(ctx context.Context, host string, u
 	return shares, nil
 }
 
-// enumerateShares attempts to enumerate shares using administrative interfaces
+// enumerateShares enumerates the REAL shares exported by the host via SRVSVC
+// (go-smb2 ListSharenames), not a guessed list of common names.
+//
+// §11.4.6 (no-guessing): the previous implementation iterated a hardcoded list
+// ("shared", "public", "media", "music", "data", ...) and reported only those
+// that happened to mount. That MISSED any share whose name was not in the guess
+// list. Verified FACT against a real Synology NAS (2026-06-26): the actual
+// exported shares are names like "Data", "DATA18", "DATA12", "DATA20", "WORK20",
+// "Projects" — none of which the guess list contained, so the old code returned
+// an empty/partial inventory while the shares plainly existed. ListSharenames
+// returns the authoritative set the server actually advertises.
 func (s *SMBDiscoveryService) enumerateShares(session *smb2.Session, host string) ([]SMBShareInfo, error) {
-	// This is a simplified implementation. In practice, you might need to use
-	// Windows administrative APIs through SMB to enumerate shares properly.
-	// For now, we'll try to mount IPC$ and see if we can get share information.
-
-	// Try common administrative share names to detect existence
-	commonShares := []string{
-		"C$", "D$", "E$", "F$", "admin$", "print$", "ipc$",
-		"shared", "public", "media", "downloads", "documents",
-		"music", "videos", "pictures", "backup", "data",
+	names, err := session.ListSharenames()
+	if err != nil {
+		return nil, fmt.Errorf("enumerate shares on %s: %w", host, err)
 	}
 
 	var availableShares []SMBShareInfo
-
-	for _, shareName := range commonShares {
-		if s.testShareAccess(session, shareName) {
-			availableShares = append(availableShares, SMBShareInfo{
-				Host:        host,
-				ShareName:   shareName,
-				Path:        fmt.Sprintf("\\\\%s\\%s", host, shareName),
-				Writable:    false, // We don't test write access here
-				Description: getShareDescription(shareName),
-			})
+	for _, shareName := range names {
+		// IPC$ is the named-pipe control share, not a browsable data share.
+		if strings.EqualFold(shareName, "IPC$") {
+			continue
 		}
+		availableShares = append(availableShares, SMBShareInfo{
+			Host:        host,
+			ShareName:   shareName,
+			Path:        fmt.Sprintf("\\\\%s\\%s", host, shareName),
+			// Writable is determined later by a per-share access probe; the
+			// SRVSVC listing does not carry write permission.
+			Writable:    false,
+			Description: getShareDescription(shareName),
+		})
 	}
 
 	return availableShares, nil
