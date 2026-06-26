@@ -1,0 +1,127 @@
+<h1 id="critical-ui-defects-resolution-evidence-2026-06-26">CRITICAL UI
+Defects — Resolution Evidence (2026-06-26)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-26T10:40:00Z <strong>Authority:</strong> Operator CRITICAL
+directive — “no cover images… huge button for going back… See with your
+eyes, obtain the screenshot, analyze, fix it!”
+<strong>Anti-bluff:</strong> §11.4 / §11.4.5 / §11.4.6 / §11.4.69 /
+§11.4.107 / §11.4.123 / §11.4.170. Every claim below cites captured
+physical evidence (a real PNG/JPEG/DB row/HTTP log), no guessing.</p>
+<hr />
+<h2
+id="defect-1-giant-gray-hero-box-on-the-media-detail-screen-fixed">DEFECT
+#1 — Giant gray hero box on the media-detail screen —
+<strong>FIXED</strong></h2>
+<p><strong>Root cause (FACT, §11.4.102):</strong>
+<code>MediaDetailScreen.kt</code> placed a hero
+<code>CoverImage(Modifier.fillMaxWidth(), ContentScale.FillWidth)</code>
+with <strong>no height bound</strong> inside the 280/400 dp hero Box. On
+a missing/failed cover the backend gray placeholder SVG floated as a
+full-width-but-short featureless gray band — the “giant gray rounded
+bar” the operator saw.</p>
+<p><strong>Fix (committed C10):</strong> extracted a stateless, bounded,
+branded <code>HeroPoster</code>: - image uses
+<code>Modifier.fillMaxSize()</code> + <code>ContentScale.Crop</code>
+(fills the bounded hero, never floats, never distorts) —
+<code>app/src/main/java/com/catalogizer/androidtv/ui/components/HeroPoster.kt</code>.
+- null / loading / error → <strong>branded</strong> OpenDesign fallback
+(navy <code>#1A237E→#0A0A0A</code> gradient + app logo + title), never a
+bare gray pill (§11.4.162). - <code>CoverImage.kt</code> gray-pill
+fallbacks replaced with <code>NeutralPlaceholderScrim</code>.</p>
+<p><strong>Proof — DEVICE-INDEPENDENT host-side rendered pixels
+(§11.4.170, authoritative):</strong> - 6 Roborazzi/Robolectric goldens
+committed at
+<code>catalogizer-androidtv/app/src/test/screenshots/heroposter/*.png</code>
+(screen × {present, missing} × {light, dark}). - Dual-validated: my eyes
++ the mechanical <code>visual_proof_layout_oracle.py</code> oracle — all
+6 PASS (no giant unbounded widget, no wide featureless band, on-screen,
+legible). - The operator’s actual broken on-device frame
+(<code>qa-results/.../critical_ui_20260626/...084012.png</code>) is
+committed as oracle golden-bad
+<code>golden_bad_wide_top_placeholder</code> and the oracle
+<strong>FAILs</strong> it (87%×12% featureless band) — the §11.4.138
+bluff-audit guard.</p>
+<p><strong>Proof — on-device (supplementary):</strong> - Fresh
+<strong>v2.4.0</strong> APK (versionCode 8) built
+(<code>BUILD SUCCESSFUL</code>, 214 MB, 2026-06-26 13:17) and installed
+on MIBOX4 (192.168.0.214) — splash + login footer both read
+<code>v2.4.0</code> (prior shipped 2.3.0), confirming the C10 fix is the
+running binary. - Home / empty-library / login screens captured
+on-device — all render cleanly, <strong>NO giant gray box
+anywhere</strong> (<code>covers_pipeline_proof/*.png</code>).</p>
+<hr />
+<h2
+id="defect-2-no-cover-art-on-any-catalog-item-fixed-cover-pipeline-proven-end-to-end">DEFECT
+#2 — No cover art on any catalog item — <strong>FIXED (cover pipeline
+proven end-to-end)</strong></h2>
+<p><strong>Root cause (FACT, §11.4.6):</strong> NOT a client bug.
+<code>data/catalogizer.db</code> had <strong>0 rows</strong> in
+<code>external_metadata</code>/<code>cover_art</code> for all items →
+backend returned the placeholder URL → app correctly showed
+placeholders. Two contributing causes: (a) no TMDB enrichment had ever
+run; (b) the previously stored <code>TMDB_API_KEY</code> was an invalid
+18-char value.</p>
+<p><strong>Fix (data + config, no code change needed — backend/client
+were correct):</strong> 1. Stored a <strong>valid</strong> TMDB v3 key +
+v4 read token in the gitignored <code>.env</code> (operator-provided;
+§11.4.10/.10.A audit clean). 2. Ran enrichment:
+<code>POST /api/v1/entities/enrich</code> →
+<code>{"scanned":5,"tmdb_enriched":4,"enriched":4}</code>. 3.
+<code>external_metadata</code> rows: <strong>0 → 6</strong> (persisted;
+survives restart).</p>
+<p><strong>Proof — end-to-end, server-side (rock-solid,
+§11.4.69/.107/.123):</strong> - <code>external_metadata</code> now holds
+real TMDB matches: Breaking Bad (<code>tmdb:1396</code>), The Matrix
+(<code>tmdb:603</code>), each with a real <code>cover_url</code>. -
+<code>GET /api/v1/entities/browse/movie</code> returns The Matrix’s
+cover as
+<code>…/image-proxy?url=https://image.tmdb.org/t/p/w500/dXNAPwY7VrqMAo51EKhhCJfaGb5.jpg</code>
+(not the placeholder). - <code>GET /api/v1/image-proxy?...</code>
+returns a <strong>real 500×750 progressive JPEG, 110 270 bytes</strong>
+— confirmed with my eyes to be the genuine “The Matrix” (1999) poster
+(<code>covers_pipeline_proof/matrix_poster.jpg</code>). This is exactly
+what the app’s Coil loader fetches → real covers render in the app.</p>
+<p><strong>Honest note (§11.4.6):</strong> the 14 catalog items are
+<strong>seed/test data</strong> (e.g. “Track Name”, “The Dark Side of
+the Moon”); the real SMB share is unreachable
+(<code>127.0.0.1:1445</code> refused). Real-content covers depend on the
+deferred identity-share-discovery epic populating the catalog from the
+Synology NAS. The cover <strong>pipeline</strong> is proven correct;
+real-content covers follow once the catalog holds real titles.</p>
+<p><strong>Deployment note for the operator:</strong> the app
+(<code>com.catalogizer.androidtv</code>) is configured for server
+<code>http://192.168.0.132:8080</code> — <strong>this host</strong>. The
+catalog-api must run bound to the LAN (<code>HOST=0.0.0.0</code>) with
+the valid <code>TMDB_API_KEY</code> set, against
+<code>data/catalogizer.db</code> (sqlite). It is currently running so;
+logging into the app as your <code>admin</code> will show the enriched
+covers.</p>
+<hr />
+<h2 id="known-limitation-fact-11.4.117-not-a-product-defect">Known
+limitation (FACT, §11.4.117 — NOT a product defect)</h2>
+<p>Autonomous ADB driving of the Android-TV <strong>login form
+submit</strong> is blocked: the Sign In control is a TV-Compose node
+that uiautomator reports <code>clickable=false</code>,
+<code>input tap</code> is ignored (TV touch disabled), and D-pad focus
+traversal on this surface is erratic/non-introspectable. The login UI
+itself renders perfectly (clean layout, “Connected to server” ✓).
+Consequently the on-device <strong>populated-detail</strong> screenshot
+(real cover on the fixed hero, in-app) could not be auto-captured this
+session. The §11.4.170 host-render goldens are the authoritative
+device-independent proof of the hero fix; the cover pipeline is proven
+server-side end-to-end. A future on-device pass should drive login via
+the §11.4.117 CV/OCR pixel-oracle path or operator-attended capture
+(tracked).</p>
+<h2 id="evidence-index">Evidence index</h2>
+<ul>
+<li><code>qa-results/device_qa_20260626/covers_pipeline_proof/</code> —
+on-device screenshots (splash v2.4.0, home, empty-library, login) +
+<code>matrix_poster.jpg</code> (real 500×750 TMDB poster).</li>
+<li><code>catalogizer-androidtv/app/src/test/screenshots/heroposter/*.png</code>
+— 6 §11.4.170 host-render goldens.</li>
+<li><code>catalogizer-androidtv/scripts/testing/visual_proof_layout_oracle.py</code>
++ selftest — mechanical layout oracle (golden-good/bad
+self-validated).</li>
+<li>Server logs:
+<code>qa-results/build_logs/catalogapi_lan_*.log</code>.</li>
+</ul>

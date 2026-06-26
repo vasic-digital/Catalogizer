@@ -1,0 +1,177 @@
+<h1 id="discovered-findings-2026-06-26-during-11.4.170-work">Discovered
+Findings — 2026-06-26 (during §11.4.170 work)</h1>
+<p><strong>Status:</strong> FINDING-1 <strong>RESOLVED</strong> (both
+legs fixed + guarded, 2026-06-26) · FINDING-2 <strong>OPEN</strong>
+(operator-gated upstream renumber). Captured by independent read-only
+subagents (§11.4.142/.150); FINDING-1 fixed by independent subagents +
+conductor-reviewed/re-validated (§11.4.142). Evidence is computed
+contrast ratios + RED→GREEN test runs + commit refs.</p>
+<hr />
+<h2
+id="finding-1-web-desktop-carry-the-same-sub-aa-error-token-as-surface-class-as-the-phone-latent-resolved">FINDING-1
+— Web + desktop carry the SAME sub-AA error-token-as-surface class as
+the phone (latent) — RESOLVED</h2>
+<p><strong>Type:</strong> Bug (accessibility / WCAG).
+<strong>Severity:</strong> Medium (latent, not yet user-reachable).
+<strong>Same class as phone fix <code>d3d00eab</code>.</strong>
+<strong>Status:</strong> Fixed (→ both legs), 2026-06-26.</p>
+<p>The defect: a dark error color token (<code>#EF4444</code>) used as
+an error <strong>surface/background</strong> paired with a light
+foreground (<code>#F8FAFC</code>) → contrast <strong>3.60:1</strong>,
+below WCAG AA 4.5:1 for normal text (passes only as large text/UI
+≥3:1).</p>
+<table>
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 12%" />
+<col style="width: 12%" />
+<col style="width: 12%" />
+<col style="width: 12%" />
+<col style="width: 12%" />
+<col style="width: 12%" />
+<col style="width: 12%" />
+</colgroup>
+<thead>
+<tr>
+<th>Client</th>
+<th>file:line</th>
+<th>Mode</th>
+<th>BG</th>
+<th>FG</th>
+<th>Ratio</th>
+<th>AA</th>
+<th>State</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>desktop</td>
+<td><code>catalogizer-desktop/src/styles/globals.css:76-77</code></td>
+<td>dark</td>
+<td><code>--destructive</code>=#EF4444</td>
+<td><code>--destructive-foreground</code>=#F8FAFC</td>
+<td><strong>3.60:1</strong></td>
+<td>FAIL (normal)</td>
+<td><strong>WIRED</strong> via <code>tailwind.config.js:41-44</code> →
+<code>bg-destructive text-destructive-foreground</code> is a live class;
+one component away from rendering (current consumer
+<code>src/pages/LoginPage.tsx:63</code> is a safe 10% tint).
+LATENT.</td>
+</tr>
+<tr>
+<td>desktop</td>
+<td><code>globals.css:46-47</code></td>
+<td>light</td>
+<td>#DC2626</td>
+<td>#FFFFFF</td>
+<td>4.83:1</td>
+<td>PASS</td>
+<td>ok</td>
+</tr>
+<tr>
+<td>web</td>
+<td><code>catalog-web/src/index.css:52-53</code></td>
+<td>dark</td>
+<td>#EF4444</td>
+<td>#F8FAFC</td>
+<td><strong>3.60:1</strong></td>
+<td>FAIL</td>
+<td>DEFINED but DORMANT — not wired into <code>tailwind.config.js</code>
+(no <code>destructive</code> color), consumed nowhere. Real destructive
+surface = <code>src/components/ui/Button.tsx:11</code>
+<code>bg-red-600 text-white</code> = #DC2626/#FFFFFF = 4.83:1 PASS.</td>
+</tr>
+</tbody>
+</table>
+<p>Neither client has a WCAG contrast oracle guarding the destructive
+pair (desktop <code>tokens.test.ts</code> only checks
+tokens.ts↔︎tokens.css drift) — the exact gap that let the phone defect
+ship.</p>
+<p><strong>RESOLUTION (2026-06-26 — §11.4.115 RED→GREEN, §11.4.145
+impact-reasoned, §11.4.142 conductor-reviewed +
+re-validated):</strong></p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Leg</th>
+<th>Commit</th>
+<th>Fix</th>
+<th>Before→After</th>
+<th>New regression guard (§11.4.135)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>desktop (WIRED, priority)</td>
+<td><code>dac3fc6e</code></td>
+<td>dark <code>--destructive-foreground</code>
+<code>--cz-neutral-foreground</code>(#F8FAFC) →
+<code>--cz-neutral-background</code>(#020817); <strong>surface left
+intact</strong> because <code>--destructive</code> is dual-purpose (also
+<code>text-destructive</code> error text on LoginPage near-black bg —
+§11.4.145 fix-A-creates-B avoided)</td>
+<td><strong>3.59:1 → 5.32:1</strong></td>
+<td><code>catalogizer-desktop/src/styles/wcag_contrast.test.ts</code>
+(vitest, 5/5; self-validated golden-bad)</td>
+</tr>
+<tr>
+<td>web (dormant)</td>
+<td><code>1afec970</code></td>
+<td>dark <code>--destructive</code> #EF4444 → red-700 #B91C1C (token
+source <code>tokens.ts</code> + <code>index.css</code>
+drift-synced)</td>
+<td><strong>3.59:1 → 6.17:1</strong></td>
+<td><code>catalog-web/src/styles/__tests__/wcag_contrast.test.ts</code>
+(vitest, 3/3; self-validated golden-bad)</td>
+</tr>
+</tbody>
+</table>
+<p>Both guards parse the <strong>actual edited token</strong> out of the
+CSS and compute the WCAG sRGB-relative-luminance ratio (no hardcoded
+assertion), each with a §11.4.107(10) self-validation case (golden-bad
+#EF4444/#F8FAFC computes &lt; 4.5). RED captured on the pre-fix token
+(3.59:1 FAIL), GREEN after (≥ AA). Light themes unchanged (4.83:1).
+Conductor independently re-ran both suites (web 3/3, desktop 5/5 PASS)
+before commit. These two tests are now the standing §11.4.135 regression
+guards — vitest auto-discovers <code>*.test.ts</code>, so they run on
+every <code>npm test</code>.</p>
+<hr />
+<h2
+id="finding-2-upstream-constitution-04d71da-has-duplicate-anchor-numbers-11.4.140-and-11.4.141">FINDING-2
+— Upstream constitution <code>04d71da</code> has duplicate anchor
+numbers §11.4.140 and §11.4.141</h2>
+<p><strong>Type:</strong> Task (governance integrity).
+<strong>Severity:</strong> Medium. <strong>Pre-existing upstream debt —
+NOT introduced by, and correctly NOT touched by, the §11.4.170 commit
+<code>fc84675</code>.</strong></p>
+<p>In <code>submodules/constitution/Constitution.md</code> at upstream
+HEAD <code>04d71da</code>: - <code>### §11.4.140</code> appears
+<strong>twice</strong>: “Universal action-prefix system” (~line 8996,
+2026-06-09) AND “Mandatory HelixTranslate canonical translation
+pipeline” (~line 9821, 2026-06-25, renamed from old §11.4.133 by
+<code>04d71da</code>). - <code>### §11.4.141</code> appears
+<strong>twice</strong>: “Token-efficiency mandate” (~line 9091,
+2026-06-09) AND “Mandatory independent per-language translation review”
+(~line 9851, 2026-06-25, new in <code>04d71da</code>).</p>
+<p>The <code>04d71da</code> commit (“fix §11.4.140 numbering collision”)
+moved the translation block off the §11.4.133 collision but onto
+already-occupied 140/141.</p>
+<p><strong>Why not fixed here:</strong> renumbering an anchor changes
+its identity + every cross-reference + the propagation-gate literal
+(<code>CM-COVENANT-114-140/141-PROPAGATION</code>) across the whole
+consumer fleet — high-blast-radius, operator-gated (§11.4.101). Also the
+translation clauses are the upstream author’s; renumbering them without
+coordination risks colliding with their next push.</p>
+<p><strong>Recommended:</strong> operator decides the free numbers for
+the translation pipeline + translation review clauses
+(e.g. §11.4.171/§11.4.172), then a dedicated commit renumbers the two
+blocks + their gate literals + carrier mirrors, with §11.4.157 lockstep
+(the carriers also lag — <code>04d71da</code> added 140/141 to
+Constitution.md only, not to CLAUDE/AGENTS/QWEN/GEMINI).</p>
