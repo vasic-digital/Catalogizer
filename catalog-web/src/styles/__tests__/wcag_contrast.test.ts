@@ -94,6 +94,50 @@ function destructiveContrast(selector: string): number {
   return contrastRatio(surface, fg)
 }
 
+/**
+ * Generic surface↔foreground contrast for ANY shadcn semantic pair in a theme
+ * rule of index.css — the §11.4.146 STEP-3 extend of `destructiveContrast` to
+ * the whole palette. The two var names are looked up from the SAME theme body
+ * so light/dark each resolve to their own tokens.
+ */
+function pairContrast(
+  selector: string,
+  surfaceVar: string,
+  fgVar: string
+): number {
+  const body = ruleBody(selector)
+  const surface = hslTripletToRgb(cssVar(body, surfaceVar))
+  const fg = hslTripletToRgb(cssVar(body, fgVar))
+  return contrastRatio(surface, fg)
+}
+
+/**
+ * §11.4.118 discovery-pressure / §11.4.146 STEP-3 extend-to-all-cases.
+ *
+ * Every shadcn foreground/background semantic pair that renders NORMAL BODY
+ * TEXT (the user reads `text-<x>-foreground` on a `bg-<x>` surface) → WCAG-AA
+ * normal-text 4.5:1. This palette has NO large-text-only or component-boundary
+ * pairs (every defined `*-foreground` token is used for body-sized labels), so
+ * every text pair below is classified 4.5:1 (§11.4.6 — classification stated,
+ * not blanket-applied). Purely decorative tokens (`--border` / `--input` /
+ * `--ring`) carry no text and are EXCLUDED (N/A) — they only ever paint hairline
+ * borders / focus outlines, never text-on-surface, so AA text contrast does not
+ * apply (WCAG 1.4.11 non-text 3:1 is a separate, out-of-scope concern here).
+ *
+ * `destructive` keeps its own dedicated assertions above; it is also covered
+ * here so the whole-palette guard is complete.
+ */
+const AA_TEXT_PAIRS: ReadonlyArray<[string, string]> = [
+  ['background', 'foreground'],
+  ['card', 'card-foreground'],
+  ['popover', 'popover-foreground'],
+  ['primary', 'primary-foreground'],
+  ['secondary', 'secondary-foreground'],
+  ['muted', 'muted-foreground'],
+  ['accent', 'accent-foreground'],
+  ['destructive', 'destructive-foreground'],
+]
+
 describe('WCAG AA contrast — destructive token pair (index.css)', () => {
   it('self-validation: the comparator FAILs a known sub-AA pair (anti-bluff §1.1)', () => {
     // golden-bad: #EF4444 on #F8FAFC is the historical defect ~3.60:1 — the
@@ -122,4 +166,16 @@ describe('WCAG AA contrast — destructive token pair (index.css)', () => {
     const ratio = destructiveContrast('.dark')
     expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
   })
+})
+
+describe('WCAG AA contrast — whole semantic palette (index.css, §11.4.146/§11.4.118)', () => {
+  for (const theme of [':root', '.dark'] as const) {
+    const themeName = theme === ':root' ? 'light' : 'dark'
+    for (const [surfaceVar, fgVar] of AA_TEXT_PAIRS) {
+      it(`${themeName} ${surfaceVar}↔${fgVar} meets AA normal-text (>= 4.5:1)`, () => {
+        const ratio = pairContrast(theme, surfaceVar, fgVar)
+        expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT)
+      })
+    }
+  }
 })

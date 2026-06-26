@@ -111,6 +111,47 @@ function destructiveRatio(themeSelector: string): number {
   return contrastRatio(bg, fg);
 }
 
+/**
+ * Generic resolved surface↔foreground ratio for ANY shadcn pair in a theme —
+ * the §11.4.146 STEP-3 extend of `destructiveRatio` to the whole palette. Each
+ * var is resolved through its `var(--cz-*)` indirection in the SAME theme, so
+ * light/dark each pick up their own tokens.
+ */
+function pairRatio(
+  themeSelector: string,
+  surfaceVar: string,
+  fgVar: string
+): number {
+  const bg = resolveTriplet(themeSelector, surfaceVar);
+  const fg = resolveTriplet(themeSelector, fgVar);
+  return contrastRatio(bg, fg);
+}
+
+/**
+ * §11.4.118 discovery-pressure / §11.4.146 STEP-3 extend-to-all-cases.
+ *
+ * Every shadcn foreground/background semantic pair that globals.css defines AND
+ * that renders NORMAL BODY TEXT (`text-<x>-foreground` on `bg-<x>`) → WCAG-AA
+ * normal-text 4.5:1. globals.css declares no `--popover` pair (so it is absent
+ * here), and unlike the web client maps `--accent` to the NEUTRAL hover surface
+ * (`--cz-neutral-surface`/`--cz-neutral-foreground`) rather than the saturated
+ * brand accent — the audited ratio reflects that real shipped mapping. This
+ * palette has NO large-text-only pairs, so every pair below is 4.5:1 (§11.4.6 —
+ * classification stated, not blanket-applied). Decorative `--border` / `--input`
+ * / `--ring` carry no text and are EXCLUDED (N/A: WCAG 1.4.11 non-text is a
+ * separate, out-of-scope concern). `destructive` retains its dedicated tests
+ * above and is re-covered here for whole-palette completeness.
+ */
+const AA_TEXT_PAIRS: ReadonlyArray<[string, string]> = [
+  ["--background", "--foreground"],
+  ["--card", "--card-foreground"],
+  ["--primary", "--primary-foreground"],
+  ["--secondary", "--secondary-foreground"],
+  ["--muted", "--muted-foreground"],
+  ["--accent", "--accent-foreground"],
+  ["--destructive", "--destructive-foreground"],
+];
+
 describe("WCAG-AA destructive contrast (real shipped tokens)", () => {
   it("light theme (:root) destructive pair clears 4.5:1", () => {
     const ratio = destructiveRatio(":root");
@@ -121,6 +162,20 @@ describe("WCAG-AA destructive contrast (real shipped tokens)", () => {
     const ratio = destructiveRatio(".dark");
     expect(ratio).toBeGreaterThanOrEqual(WCAG_AA_NORMAL);
   });
+});
+
+describe("WCAG-AA whole semantic palette (real shipped tokens, §11.4.146/§11.4.118)", () => {
+  for (const [theme, themeName] of [
+    [":root", "light"],
+    [".dark", "dark"],
+  ] as const) {
+    for (const [surfaceVar, fgVar] of AA_TEXT_PAIRS) {
+      it(`${themeName} ${surfaceVar}↔${fgVar} clears AA normal-text 4.5:1`, () => {
+        const ratio = pairRatio(theme, surfaceVar, fgVar);
+        expect(ratio).toBeGreaterThanOrEqual(WCAG_AA_NORMAL);
+      });
+    }
+  }
 });
 
 describe("self-validation of the contrast analyzer (§11.4.107(10))", () => {
