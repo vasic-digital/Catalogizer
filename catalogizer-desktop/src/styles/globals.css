@@ -73,8 +73,20 @@
     --accent: var(--cz-neutral-surface);
     --accent-foreground: var(--cz-neutral-foreground);
 
+    /*
+     * Destructive BUTTON pair (bg-destructive + text-destructive-foreground).
+     * The dark semantic-error surface is the lighter #EF4444 (kept lighter on
+     * purpose: it is ALSO used as `text-destructive` error text on the near-black
+     * page bg in LoginPage, where a LIGHT red is required for legibility — so the
+     * SURFACE token MUST NOT be darkened). #EF4444 is a mid-luminance red that
+     * cannot carry near-white on-error text at WCAG-AA (≈3.59:1). The on-error is
+     * therefore the dark neutral background (#020817), giving a Material-3-style
+     * "light error surface + dark on-error" pair at ≈5.32:1 (AA-clearing) without
+     * regressing the LoginPage error-text role. Light mode keeps #DC2626/#FFFFFF
+     * (4.83:1), so this change is dark-only.
+     */
     --destructive: var(--cz-semantic-error);
-    --destructive-foreground: var(--cz-neutral-foreground);
+    --destructive-foreground: var(--cz-neutral-background);
 
     --border: var(--cz-neutral-border);
     --input: var(--cz-neutral-border);
