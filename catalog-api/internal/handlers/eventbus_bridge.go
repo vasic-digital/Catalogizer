@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"catalogizer/internal/eventbus"
+	"fmt"
 	"sync"
 
 	root_handlers "catalogizer/handlers"
@@ -14,7 +15,8 @@ import (
 //
 // The bridge reads from the eventbus subscription channel in a background
 // goroutine and calls wsHandler.BroadcastToClients for each matching event.
-// Only events with client-facing types (scan.*, entity.*, file.*) are forwarded.
+// Events are mapped to client-facing message types that the UI already handles
+// (notification, media_update, analysis_complete in websocket.ts).
 // Publication is non-blocking: BroadcastToClients drops messages for clients
 // whose send buffer is full rather than blocking the bridge.
 type EventBusBridge struct {
@@ -25,7 +27,13 @@ type EventBusBridge struct {
 	subCancel  func()
 	closeOnce  sync.Once
 	stopCh     chan struct{}
-	routingMap map[eventbus.EventType]string
+	routingMap map[eventbus.EventType]wsRoute
+}
+
+// wsRoute describes how a system event is mapped to a WebSocket message.
+type wsRoute struct {
+	wsType string        // The "type" field in the client-facing message
+	build  func(*eventbus.Event) map[string]interface{}
 }
 
 // NewEventBusBridge creates a new bridge that subscribes to the given eventbus
@@ -40,18 +48,112 @@ func NewEventBusBridge(bus *eventbus.EventBus, wsHandler *root_handlers.WebSocke
 		wsHandler: wsHandler,
 		logger:    logger,
 		stopCh:    make(chan struct{}),
-		// Map of eventbus event types to the WebSocket message "type" field.
-		// Only events listed here are forwarded to clients.
-		routingMap: map[eventbus.EventType]string{
-			eventbus.EventScanCompleted: "scan_completed",
-			eventbus.EventScanFailed:    "scan_failed",
-			eventbus.EventScanStarted:   "scan_started",
-			eventbus.EventFileCreated:   "file_created",
-			eventbus.EventFileModified:  "file_modified",
-			eventbus.EventFileDeleted:   "file_deleted",
-			eventbus.EventFileMoved:     "file_moved",
-			eventbus.EventEntityCreated: "entity_created",
-			eventbus.EventEntityUpdated: "entity_updated",
+		routingMap: map[eventbus.EventType]wsRoute{
+			eventbus.EventScanCompleted: {
+				wsType: "notification",
+				build: func(evt *eventbus.Event) map[string]interface{} {
+					payload, _ := evt.Payload.(map[string]interface{})
+					msg := "Scan completed"
+					if payload != nil {
+						if sr, ok := payload["storage_root"].(string); ok {
+							msg = "Scan completed: " + sr
+						}
+						if fp, ok := payload["files_found"].(int64); ok && fp > 0 {
+							msg += " (" + fmt.Sprintf("%d files found", fp) + ")"
+						}
+					}
+					return map[string]interface{}{
+						"type": "notification",
+						"payload": map[string]interface{}{
+							"level":   "success",
+							"message": msg,
+						},
+					}
+				},
+			},
+			eventbus.EventScanFailed: {
+				wsType: "notification",
+				build: func(evt *eventbus.Event) map[string]interface{} {
+					payload, _ := evt.Payload.(map[string]interface{})
+					msg := "Scan failed"
+					if payload != nil {
+						if sr, ok := payload["storage_root"].(string); ok {
+							msg = "Scan failed: " + sr
+						}
+						if errStr, ok := payload["error"].(string); ok {
+							msg += ": " + errStr
+						}
+					}
+					return map[string]interface{}{
+						"type": "notification",
+						"payload": map[string]interface{}{
+							"level":   "error",
+							"message": msg,
+						},
+					}
+				},
+			},
+			eventbus.EventScanStarted: {
+				wsType: "scan_started",
+				build: func(evt *eventbus.Event) map[string]interface{} {
+					payload, _ := evt.Payload.(map[string]interface{})
+					msg := map[string]interface{}{
+						"type":    "scan_started",
+						"payload": payload,
+					}
+					if payload == nil {
+						msg["payload"] = evt.Payload
+					}
+					return msg
+				},
+			},
+			eventbus.EventEntityCreated: {
+				wsType: "media_update",
+				build: func(evt *eventbus.Event) map[string]interface{} {
+					payload, _ := evt.Payload.(map[string]interface{})
+					return map[string]interface{}{
+						"type":    "media_update",
+						"payload": payload,
+					}
+				},
+			},
+			eventbus.EventEntityUpdated: {
+				wsType: "media_update",
+				build: func(evt *eventbus.Event) map[string]interface{} {
+					payload, _ := evt.Payload.(map[string]interface{})
+					return map[string]interface{}{
+						"type":    "media_update",
+						"payload": payload,
+					}
+				},
+			},
+			eventbus.EventFileCreated: {
+				wsType: "file_created",
+				build: func(evt *eventbus.Event) map[string]interface{} {
+					return map[string]interface{}{
+						"type":    "file_created",
+						"payload": evt.Payload,
+					}
+				},
+			},
+			eventbus.EventFileModified: {
+				wsType: "file_modified",
+				build: func(evt *eventbus.Event) map[string]interface{} {
+					return map[string]interface{}{
+						"type":    "file_modified",
+						"payload": evt.Payload,
+					}
+				},
+			},
+			eventbus.EventFileDeleted: {
+				wsType: "file_deleted",
+				build: func(evt *eventbus.Event) map[string]interface{} {
+					return map[string]interface{}{
+						"type":    "file_deleted",
+						"payload": evt.Payload,
+					}
+				},
+			},
 		},
 	}
 
@@ -109,32 +211,15 @@ func (b *EventBusBridge) forwardLoop(sub *eventbus.Subscription) {
 // forwardEvent converts a system event to a WebSocket JSON message and
 // broadcasts it to all connected clients.
 func (b *EventBusBridge) forwardEvent(evt *eventbus.Event) {
-	wsType, ok := b.routingMap[evt.Type]
+	route, ok := b.routingMap[evt.Type]
 	if !ok {
 		return // Unknown event type — don't forward
 	}
 
-	msg := map[string]interface{}{
-		"type":       wsType,
-		"event_type": string(evt.Type),
-		"source":     evt.Source,
-		"timestamp":  evt.Timestamp,
-		"trace_id":   evt.TraceID,
-		"payload":    evt.Payload,
-	}
-
-	// Merge metadata into the message payload when present
-	if len(evt.Metadata) > 0 {
-		meta := make(map[string]string)
-		for k, v := range evt.Metadata {
-			meta[k] = v
-		}
-		msg["metadata"] = meta
-	}
-
+	msg := route.build(evt)
 	b.wsHandler.BroadcastToClients(msg)
 
 	b.logger.Debug("Forwarded event to WebSocket clients",
 		zap.String("event_type", string(evt.Type)),
-		zap.String("ws_type", wsType))
+		zap.String("ws_type", route.wsType))
 }
