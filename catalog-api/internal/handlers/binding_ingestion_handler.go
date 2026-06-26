@@ -9,6 +9,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const hostAllowedErr = "Host not allowed"
+
 // ProbeAndIngestRequest represents the request to probe a host and ingest results.
 // Only host is required — identities are loaded from environment variables
 // (CATALOGIZER_IDENTITY_*) so no credentials ever travel over the wire (§11.4.10).
@@ -78,7 +80,13 @@ func (h *ProbeAndIngestHandler) ProbeAndIngest(c *gin.Context) {
 	var req ProbeAndIngestRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Invalid probe-and-ingest request", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	if !isHostAllowed(req.Host) {
+		h.logger.Warn("Blocked probe to disallowed host", zap.String("host", req.Host))
+		c.JSON(http.StatusBadRequest, gin.H{"error": hostAllowedErr})
 		return
 	}
 
@@ -95,8 +103,7 @@ func (h *ProbeAndIngestHandler) ProbeAndIngest(c *gin.Context) {
 			zap.String("host", req.Host),
 			zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "SMB probe failed: " + err.Error(),
-			"host":  req.Host,
+			"error": "SMB probe failed",
 		})
 		return
 	}
@@ -116,8 +123,7 @@ func (h *ProbeAndIngestHandler) ProbeAndIngest(c *gin.Context) {
 				zap.String("host", req.Host),
 				zap.Error(ingestErr))
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Failed to persist bindings: " + ingestErr.Error(),
-				"host":  req.Host,
+				"error": "Failed to persist bindings",
 			})
 			return
 		}

@@ -244,7 +244,13 @@ func (h *SMBDiscoveryHandler) ProbeHost(c *gin.Context) {
 	var req ProbeHostRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		h.logger.Error("Invalid probe request", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	if !isHostAllowed(req.Host) {
+		h.logger.Warn("Blocked probe to disallowed host", zap.String("host", req.Host))
+		c.JSON(http.StatusBadRequest, gin.H{"error": hostAllowedErr})
 		return
 	}
 
@@ -257,8 +263,7 @@ func (h *SMBDiscoveryHandler) ProbeHost(c *gin.Context) {
 	if err != nil {
 		h.logger.Error("Failed to probe SMB host", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":  "Failed to probe host: " + err.Error(),
-			"result": result,
+			"error": "Failed to probe host",
 		})
 		return
 	}

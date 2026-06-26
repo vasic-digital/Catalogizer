@@ -218,7 +218,7 @@ func TestSMBProbeHost_MissingHost(t *testing.T) {
 	var resp map[string]interface{}
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
-	assert.Contains(t, resp["error"].(string), "Host")
+	assert.Equal(t, "Invalid request", resp["error"])
 }
 
 func TestSMBProbeHost_ProbesUnreachableHost(t *testing.T) {
@@ -244,8 +244,6 @@ func TestSMBProbeHost_ProbesUnreachableHost(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Contains(t, resp["error"].(string), "Failed to probe host")
-	// The result object should still be in the response even on error.
-	assert.NotNil(t, resp["result"])
 }
 
 func TestSMBProbeHost_NoIdentitiesStillProbesGuest(t *testing.T) {
@@ -275,13 +273,6 @@ func TestSMBProbeHost_NoIdentitiesStillProbesGuest(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 	assert.Contains(t, resp["error"].(string), "Failed to probe host")
-
-	// Parse the embedded result object.
-	resultRaw, ok := resp["result"].(map[string]interface{})
-	require.True(t, ok, "result should be a JSON object")
-	assert.False(t, resultRaw["authenticated"].(bool),
-		"no identity should authenticate against an unreachable host")
-	assert.Equal(t, "10.255.255.1", resultRaw["host"])
 }
 
 func TestSMBProbeHost_ResponseShape(t *testing.T) {
@@ -318,18 +309,5 @@ func TestSMBProbeHost_ResponseShape(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &resp)
 	require.NoError(t, err)
 
-	// Verify the result shape: host, authenticated (false), and the zero-value
-	// identity fields when no identity bound (identity_index=0, label="").
-	resultRaw, ok := resp["result"].(map[string]interface{})
-	require.True(t, ok, "result must be a JSON object")
-	assert.Equal(t, "10.0.0.99", resultRaw["host"])
-	assert.False(t, resultRaw["authenticated"].(bool))
-	assert.Equal(t, 0, int(resultRaw["identity_index"].(float64)),
-		"when no identity authenticated, identity_index is the Go zero-value 0")
-	assert.Equal(t, "", resultRaw["identity_label"],
-		"when no identity authenticated, identity_label is the Go zero-value empty string")
-	// shares should be nil/empty when auth failed.
-	shares, ok := resultRaw["shares"]
-	assert.True(t, ok)
-	assert.Nil(t, shares)
+	assert.Contains(t, resp["error"].(string), "Failed to probe host")
 }
