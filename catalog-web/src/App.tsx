@@ -27,6 +27,7 @@ const AIDashboard = React.lazy(() => import('@/pages/AIDashboard'))
 const EntityBrowser = React.lazy(() => import('@/pages/EntityBrowser').then(m => ({ default: m.EntityBrowser })))
 const EntityDetail = React.lazy(() => import('@/pages/EntityDetail').then(m => ({ default: m.EntityDetail })))
 const SettingsPage = React.lazy(() => import('@/pages/Settings').then(m => ({ default: m.Settings })))
+const IdentityManagerPage = React.lazy(() => import('@/pages/IdentityManager'))
 
 const PageLoader: React.FC = () => (
   <div className="p-6 space-y-4 animate-pulse min-h-[400px]">
@@ -191,6 +192,16 @@ function App() {
                     <ProtectedRoute>
                       <PageErrorBoundary pageName="AI Dashboard">
                         <AIDashboard />
+                      </PageErrorBoundary>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/identities"
+                  element={
+                    <ProtectedRoute requiredPermission="read:media">
+                      <PageErrorBoundary pageName="Identity &amp; Share Discovery">
+                        <IdentityManagerPage />
                       </PageErrorBoundary>
                     </ProtectedRoute>
                   }
