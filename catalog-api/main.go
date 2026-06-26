@@ -8,6 +8,7 @@ import (
 	root_handlers "catalogizer/handlers"
 	"catalogizer/internal/auth"
 	internal_config "catalogizer/internal/config"
+	"catalogizer/internal/eventbus"
 	"catalogizer/internal/handlers"
 	"catalogizer/internal/logging"
 	"catalogizer/internal/media/providers"
@@ -578,6 +579,13 @@ func main() {
 	aggregationService := services.NewAggregationService(databaseDB, logger, mediaItemRepo, mediaFileRepo, dirAnalysisRepo, extMetaRepo)
 	universalScanner.SetAggregationService(aggregationService)
 
+		// System event bus for decoupled communication between components.
+		// Publishers (scanner) and subscribers (WebSocket bridge) are independent.
+		sysEventBusCfg := eventbus.DefaultConfig()
+		sysEventBus := eventbus.New(sysEventBusCfg)
+		defer sysEventBus.Close()
+		universalScanner.SetEventBus(sysEventBus)
+
 	// CacheService is eager — used during shutdown and potentially by other services
 	cacheService := services.NewCacheService(databaseDB, logger)
 
@@ -617,6 +625,11 @@ func main() {
 
 	// WebSocket handler for real-time updates
 	wsHandler := root_handlers.NewWebSocketHandler(logger)
+
+		// EventBus bridge forwards system events to WebSocket clients.
+		eventBusBridge := handlers.NewEventBusBridge(sysEventBus, wsHandler, logger)
+		eventBusBridge.Start()
+		defer eventBusBridge.Stop()
 
 	// Initialize asset management system
 	assetRepo := root_repository.NewAssetRepository(databaseDB)

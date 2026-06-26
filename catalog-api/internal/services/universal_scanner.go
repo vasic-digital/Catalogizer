@@ -4,6 +4,7 @@ import (
 	"catalogizer/database"
 	"catalogizer/filesystem"
 	scancontrol "catalogizer/internal/concurrency"
+	"catalogizer/internal/eventbus"
 	"catalogizer/models"
 	"context"
 	"fmt"
@@ -24,6 +25,7 @@ type UniversalScanner struct {
 	renameTracker      *UniversalRenameTracker
 	clientFactory      filesystem.ClientFactory
 	aggregationService *AggregationService
+	eventBus           *eventbus.EventBus
 	scanQueue          chan ScanJob
 	workers            int
 	maxConcurrentScans int
@@ -126,6 +128,43 @@ func NewUniversalScanner(db *database.DB, logger *zap.Logger, renameTracker *Uni
 // SetAggregationService sets the aggregation service for post-scan entity creation.
 func (s *UniversalScanner) SetAggregationService(svc *AggregationService) {
 	s.aggregationService = svc
+}
+
+// SetEventBus sets the system event bus for publishing scan lifecycle events.
+func (s *UniversalScanner) SetEventBus(bus *eventbus.EventBus) {
+	s.eventBus = bus
+}
+
+// publishScanEvent publishes a scan lifecycle event to the system event bus.
+func (s *UniversalScanner) publishScanEvent(job ScanJob, status *ScanStatus, scanErr error) {
+	if s.eventBus == nil {
+		return
+	}
+
+	eventType := eventbus.EventScanCompleted
+	if scanErr != nil {
+		eventType = eventbus.EventScanFailed
+	}
+
+	snapshot := status.GetSnapshot()
+	payload := map[string]interface{}{
+		"job_id":          job.ID,
+		"storage_root":    job.StorageRoot.Name,
+		"protocol":        job.StorageRoot.Protocol,
+		"status":          snapshot.Status,
+		"start_time":      snapshot.StartTime,
+		"files_processed": snapshot.FilesProcessed,
+		"files_found":     snapshot.FilesFound,
+		"files_updated":   snapshot.FilesUpdated,
+		"files_deleted":   snapshot.FilesDeleted,
+		"error_count":     snapshot.ErrorCount,
+	}
+	if scanErr != nil {
+		payload["error"] = scanErr.Error()
+	}
+
+	evt := eventbus.NewEvent(eventType, "universal-scanner", payload)
+	s.eventBus.Publish(evt)
 }
 
 // RegisterProtocolScanner registers a protocol-specific scanner
@@ -243,6 +282,8 @@ func (s *UniversalScanner) processScanJob(job ScanJob, workerID int) {
 			zap.String("protocol", job.StorageRoot.Protocol),
 			zap.String("job_id", job.ID))
 		status.updateStatus("failed")
+		scanErr := fmt.Errorf("no scanner for protocol %s", job.StorageRoot.Protocol)
+		s.publishScanEvent(job, status, scanErr)
 		return
 	}
 
@@ -259,6 +300,7 @@ func (s *UniversalScanner) processScanJob(job ScanJob, workerID int) {
 			zap.String("job_id", job.ID),
 			zap.Error(err))
 		status.updateStatus("failed")
+		s.publishScanEvent(job, status, err)
 		return
 	}
 
@@ -269,6 +311,7 @@ func (s *UniversalScanner) processScanJob(job ScanJob, workerID int) {
 			zap.String("job_id", job.ID),
 			zap.Error(err))
 		status.updateStatus("failed")
+		s.publishScanEvent(job, status, err)
 		return
 	}
 	defer client.Disconnect(job.Context)
@@ -279,10 +322,12 @@ func (s *UniversalScanner) processScanJob(job ScanJob, workerID int) {
 			zap.String("job_id", job.ID),
 			zap.Error(err))
 		status.updateStatus("failed")
+		s.publishScanEvent(job, status, err)
 		return
 	}
 
 	status.updateStatus("completed")
+	s.publishScanEvent(job, status, nil)
 	snapshot := status.GetSnapshot()
 	s.logger.Info("Scan completed successfully",
 		zap.String("job_id", job.ID),
