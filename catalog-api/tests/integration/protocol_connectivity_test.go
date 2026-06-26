@@ -260,9 +260,8 @@ func TestSMBDiscoveryService(t *testing.T) {
 
 	discoveryService := services.NewSMBDiscoveryService(logger)
 
-	t.Run("Discover shares with fallback", func(t *testing.T) {
-		shares, err := discoveryService.DiscoverShares(ctx, "nonexistent.host.local", "user", "pass", nil)
-		require.NoError(t, err, "Discovery should succeed with fallback shares")
-		assert.GreaterOrEqual(t, len(shares), 1, "Should return at least fallback shares")
+	t.Run("Discover shares returns error for unreachable host", func(t *testing.T) {
+		_, err := discoveryService.DiscoverShares(ctx, "nonexistent.host.local", "user", "pass", nil)
+		require.Error(t, err, "§11.4.6: DiscoverShares must return an error for an unreachable host, not fabricated share names")
 	})
 }
