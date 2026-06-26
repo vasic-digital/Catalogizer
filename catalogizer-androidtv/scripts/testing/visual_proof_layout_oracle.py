@@ -16,6 +16,12 @@ test can never give:
                         catches a giant placeholder rendered AT/near the
                         background color that the foreground check cannot see
                         (closes review finding L1, §11.4.107(10))
+  - no wide band:      no wide featureless FOREGROUND band that spans most of the
+                        canvas WIDTH with a meaningful height — a full-width gray
+                        backdrop/hero placeholder whose AREA fraction stays under
+                        the giant threshold (wide-but-short) and which hugs the top
+                        border, so it evades BOTH the giant check and the interior
+                        check (closes the §11.4.138 escape L4, §11.4.107(10))
   - no label overlap:  no two OCR text boxes overlap (label-over-label)
   - on-screen:         text boxes lie within the canvas (no clipping/off-screen)
 
@@ -52,6 +58,31 @@ confirmed by independent review 2026-06-26):
      giant interior blank legitimately is a §11.4.170 defect, so a large intended
      uniform interior surface (e.g. a full-screen player fill) would also flag —
      by design, not a false positive for this mandate.
+  L4 (wide-short top-anchored band) — CLOSED 2026-06-26 by the wide-band check
+     (check #3b below, no_wide_featureless_band). FORENSIC (§11.4.138): the real MIBOX4
+     frame catalogizer---androidtv-current-084012.png (the Breaking Bad TV detail screen,
+     now committed as golden_bad_wide_top_placeholder.png) shows a GIANT featureless GRAY
+     rounded backdrop spanning the FULL canvas WIDTH across the TOP (~top 12.5% height,
+     gray ~50-70, brighter than the near-black ~10-25 page bg). It PASSed the oracle
+     because (a) its featureless-fg AREA fraction is only ~0.098 — BELOW the 0.32 giant
+     threshold (check #2 measured it as a featureless fg blob but under the area bar), and
+     (b) it TOUCHES the top + left + right canvas borders, so the interior-blank check #3
+     (border-contact ~0.0 requirement) exonerates it as border-touching, not interior. The
+     wide-band check now flags any featureless FG component whose WIDTH-span (>=0.60) AND
+     HEIGHT-span (>=0.09) both exceed their floors — a wide gray bar where a real
+     image/content belongs — regardless of total area or top-border contact. Measured
+     separation: defect band wspan 0.871 / hspan 0.125 (FAIL) vs clean-home widest
+     featureless band wspan 0.647 / hspan 0.056 (PASS). RESIDUAL LIMIT (honest §11.4.6):
+     (i) a textured/branded hero of the SAME size is correctly NOT flagged — a real
+     poster/backdrop image has texture (high local stddev), so it is not featureless and
+     does not enter the FG featureless mask; a legit full-width media banner WITH
+     text/texture likewise does not flag. This is by design, not a false negative the
+     mandate cares about (a *blank* full-width placeholder IS the §11.4.170 defect; a
+     populated one is correct UI). (ii) A genuine full-width SOLID-color band that is
+     intended (e.g. an intentional flat color-fill header) taller than 9% would also flag —
+     by design, an unbounded featureless full-width surface is exactly the §11.4.170
+     signature; if a project ships such an intended surface it calibrates the floor up on
+     its own fixtures per §11.4.6.
   L2 (legibility near-vacuous): min_legible_words=1 makes legibility a weak floor;
      the giant-widget check carries the actual §11.4.170 proof, not legibility.
   L3 (overlap/clip not yet golden-bad-guarded): the no_label_overlap and on_screen
@@ -89,6 +120,21 @@ THRESHOLDS = {
     "interior_region_area_frac_max": 0.32,  # > this interior featureless fraction => blank FAIL
     "interior_border_contact_max": 0.10,    # component touching < this of the canvas border is
                                             # INTERIOR (not the true page background, contact ~1.0)
+    # --- wide featureless BRIGHT band check (closes L4) ---
+    # A featureless FG region (gray > bg) that spans most of the canvas WIDTH with a
+    # meaningful height band — a wide gray bar where a real backdrop/hero/content image
+    # should render. Evades check #2 (its AREA frac is below the 0.32 giant threshold for a
+    # wide-but-short band) and check #3 (it is BRIGHTER than bg, and hugs the top/side borders).
+    # Measured on this project's frames (reuses the check #2 featureless-FG components):
+    #   DEFECT golden_bad_wide_top_placeholder.png -> band wspan 0.871, hspan 0.125, frac 0.098
+    #                                                  (the real MIBOX4 §11.4.138 escape frame)
+    #   GOOD   golden_good_home.png  widest featureless FG band -> wspan 0.647, hspan 0.056
+    #          (a thin section strip; real card rows have texture => NOT featureless => not a band)
+    #   bad_giant_poster -> a 0.889x0.086 band too, but it already FAILs check #2 (frac 0.58)
+    # Width floor 0.60 (good 0.647 is just over but its hspan 0.056 saves it); height floor 0.09
+    # = the midpoint of good 0.056 and defect 0.125 (max margin ~0.034 each side).
+    "wide_band_width_span_min": 0.60,    # >= this canvas-width fraction => "wide"
+    "wide_band_height_span_min": 0.09,   # AND >= this canvas-height fraction => band (not a hairline)
 }
 
 
@@ -228,6 +274,43 @@ def analyze(path, min_conf):
             "cannot see (§11.4.170 giant-unbounded signature, L1)"
             % (interior_frac * 100, interior_contact,
                THRESHOLDS["interior_border_contact_max"], interior_box))
+
+    # ---- (3b) wide featureless BRIGHT band (closes L4) ----
+    # The §11.4.138 escape: a giant featureless GRAY backdrop/hero placeholder that spans the
+    # FULL canvas WIDTH but is short enough that its AREA fraction (~0.10) stays below the 0.32
+    # giant threshold (check #2 passes it) AND is BRIGHTER than the page background while hugging
+    # the top/side borders (check #3 exonerates it as border-touching, not interior). Reuse the
+    # check #2 featureless-FG components (same n/stats): flag any component whose width-span AND
+    # height-span both exceed their floors — a wide gray bar where a real image/content belongs.
+    wide_box = None
+    wide_w_span = 0.0
+    wide_h_span = 0.0
+    for lbl in range(1, n):
+        bw = int(stats[lbl, cv2.CC_STAT_WIDTH])
+        bh = int(stats[lbl, cv2.CC_STAT_HEIGHT])
+        ws = bw / float(w)
+        hs = bh / float(h)
+        if (ws >= THRESHOLDS["wide_band_width_span_min"]
+                and hs >= THRESHOLDS["wide_band_height_span_min"]
+                and hs > wide_h_span):           # keep the tallest qualifying band (most defect-like)
+            wide_w_span = ws
+            wide_h_span = hs
+            wide_box = [int(stats[lbl, cv2.CC_STAT_LEFT]), int(stats[lbl, cv2.CC_STAT_TOP]), bw, bh]
+    wide_ok = wide_box is None
+    checks["no_wide_featureless_band"] = {
+        "pass": bool(wide_ok),
+        "band_width_span": round(wide_w_span, 4),
+        "band_height_span": round(wide_h_span, 4),
+        "width_span_threshold": THRESHOLDS["wide_band_width_span_min"],
+        "height_span_threshold": THRESHOLDS["wide_band_height_span_min"],
+        "region_bbox_xywh": wide_box,
+    }
+    if not wide_ok:
+        findings.append(
+            "wide featureless bright band spans %.0f%% width x %.0f%% height at bbox %s "
+            "(a full-width gray backdrop/hero placeholder where a real image/content belongs; "
+            "evades the area-based giant check #2, §11.4.170 / §11.4.138 escape, L4)"
+            % (wide_w_span * 100, wide_h_span * 100, wide_box))
 
     # ---- (4) label-over-label overlap ----
     overlaps = 0
