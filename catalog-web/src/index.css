@@ -49,7 +49,7 @@
     --muted-foreground: 215 20.2% 65.1%; /* #94A3B8 */
     --accent: 277.9 41.3% 82%; /* #D6BEE4 brand accent (dark) */
     --accent-foreground: 275.2 42% 13.5%; /* #251431 onAccent (dark) */
-    --destructive: 0 84.2% 60.2%; /* #EF4444 error (dark) */
+    --destructive: 0 73.7% 41.8%; /* #B91C1C error (dark) — WCAG AA >=4.5:1 vs #F8FAFC */
     --destructive-foreground: 210 40% 98%; /* #F8FAFC */
     --border: 217.2 32.6% 17.5%; /* #1E293B */
     --input: 217.2 32.6% 17.5%; /* #1E293B */

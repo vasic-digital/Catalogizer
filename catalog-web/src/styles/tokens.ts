@@ -78,7 +78,11 @@ export const color = {
     },
     error: {
       light: t('#DC2626', '0 72.2% 50.6%'),
-      dark: t('#EF4444', '0 84.2% 60.2%'),
+      // Dark error surface darkened from the audit #EF4444 (which gave only
+      // ~3.60:1 vs the light #F8FAFC on-error → sub-AA) to red-700 #B91C1C, a
+      // clear destructive red reaching ~6.18:1 — WCAG AA per §11.4.162 /
+      // §11.4.115. Material-3 "darken the surface, keep light on-error".
+      dark: t('#B91C1C', '0 73.7% 41.8%'),
     },
   },
   neutral: {
