@@ -60,9 +60,7 @@ func (s *SMBDiscoveryService) DiscoverShares(ctx context.Context, host string, u
 	// Establish connection
 	conn, err := net.DialTimeout("tcp", fmt.Sprintf("%s:445", host), s.timeout)
 	if err != nil {
-		s.logger.Error("Failed to connect to SMB host", zap.String("host", host), zap.Error(err))
-		// Return common shares when connection fails
-		return s.getCommonShares(ctx, host, username, password, domain), nil
+		return nil, fmt.Errorf("connect to %s:445: %w", host, err)
 	}
 	defer conn.Close()
 
@@ -77,21 +75,11 @@ func (s *SMBDiscoveryService) DiscoverShares(ctx context.Context, host string, u
 
 	session, err := d.Dial(conn)
 	if err != nil {
-		s.logger.Error("Failed to create SMB session", zap.String("host", host), zap.Error(err))
-		// Return common shares when session creation fails
-		return s.getCommonShares(ctx, host, username, password, domain), nil
+		return nil, fmt.Errorf("SMB session on %s: %w", host, err)
 	}
 	defer session.Logoff()
 
-	// Try to enumerate shares using IPC$ administrative share
-	shares, err := s.enumerateShares(session, host)
-	if err != nil {
-		s.logger.Warn("Failed to enumerate shares via IPC$, falling back to common shares", zap.Error(err))
-		// Fallback to common share names
-		return s.getCommonShares(ctx, host, username, password, domain), nil
-	}
-
-	return shares, nil
+	return s.enumerateShares(session, host)
 }
 
 // enumerateShares enumerates the REAL shares exported by the host via SRVSVC
@@ -142,43 +130,6 @@ func (s *SMBDiscoveryService) testShareAccess(session *smb2.Session, shareName s
 	// Try to list the root directory
 	_, err = share.ReadDir(".")
 	return err == nil
-}
-
-// getCommonShares returns common share names to try
-func (s *SMBDiscoveryService) getCommonShares(ctx context.Context, host, username, password string, domain *string) []SMBShareInfo {
-	commonShares := []SMBShareInfo{
-		{Host: host, ShareName: "shared", Path: fmt.Sprintf("\\\\%s\\shared", host), Description: smbStringPtr("Shared folder")},
-		{Host: host, ShareName: "public", Path: fmt.Sprintf("\\\\%s\\public", host), Description: smbStringPtr("Public folder")},
-		{Host: host, ShareName: "media", Path: fmt.Sprintf("\\\\%s\\media", host), Description: smbStringPtr("Media files")},
-		{Host: host, ShareName: "downloads", Path: fmt.Sprintf("\\\\%s\\downloads", host), Description: smbStringPtr("Downloads")},
-		{Host: host, ShareName: "documents", Path: fmt.Sprintf("\\\\%s\\documents", host), Description: smbStringPtr("Documents")},
-		{Host: host, ShareName: "music", Path: fmt.Sprintf("\\\\%s\\music", host), Description: smbStringPtr("Music files")},
-		{Host: host, ShareName: "videos", Path: fmt.Sprintf("\\\\%s\\videos", host), Description: smbStringPtr("Video files")},
-		{Host: host, ShareName: "pictures", Path: fmt.Sprintf("\\\\%s\\pictures", host), Description: smbStringPtr("Pictures")},
-		{Host: host, ShareName: "backup", Path: fmt.Sprintf("\\\\%s\\backup", host), Description: smbStringPtr("Backup files")},
-	}
-
-	// Test which ones are actually accessible
-	var accessibleShares []SMBShareInfo
-	for _, share := range commonShares {
-		if s.TestConnection(ctx, SMBConnectionConfig{
-			Host:     host,
-			Port:     445,
-			Share:    share.ShareName,
-			Username: username,
-			Password: password,
-			Domain:   domain,
-		}) {
-			accessibleShares = append(accessibleShares, share)
-		}
-	}
-
-	// If no shares are accessible (e.g., host unreachable), return common shares as suggestions
-	if len(accessibleShares) == 0 {
-		return commonShares
-	}
-
-	return accessibleShares
 }
 
 // TestConnection tests an SMB connection with the provided credentials
@@ -302,10 +253,6 @@ func getStringValue(s *string) string {
 		return ""
 	}
 	return *s
-}
-
-func smbStringPtr(s string) *string {
-	return &s
 }
 
 func getShareDescription(shareName string) *string {

@@ -9,35 +9,25 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestSMBDiscoveryService_GetCommonShares(t *testing.T) {
+func TestSMBDiscoveryService_DiscoverShares_UnreachableHost(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping network-dependent test in short mode")
 	}
 	logger := zap.NewNop()
 	service := NewSMBDiscoveryService(logger)
 
-	// Test with a non-existent host to ensure fallback works
+	// Test with a non-existent host to verify anti-bluff: DiscoverShares returns
+	// an error (not fabricated "common shares") when the host is unreachable.
+	// §11.4.6 — guessing share names that don't exist on the target is forbidden.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	shares := service.getCommonShares(ctx, "nonexistent.host", "testuser", "testpass", nil)
+	_, err := service.DiscoverShares(ctx, "nonexistent.host", "testuser", "testpass", nil)
 
-	if len(shares) == 0 {
-		t.Error("Expected common shares to be returned, got empty list")
+	if err == nil {
+		t.Fatal("§11.4.6: DiscoverShares must return an error for an unreachable host, not fabricated share names")
 	}
-
-	// Verify the shares have expected properties
-	for _, share := range shares {
-		if share.Host != "nonexistent.host" {
-			t.Errorf("Expected host to be 'nonexistent.host', got '%s'", share.Host)
-		}
-		if share.ShareName == "" {
-			t.Error("Expected share name to be non-empty")
-		}
-		if share.Path == "" {
-			t.Error("Expected path to be non-empty")
-		}
-	}
+	t.Logf("§11.4.6 PASS: DiscoverShares returned honest error: %v", err)
 }
 
 func TestSMBDiscoveryService_TestConnection_InvalidHost(t *testing.T) {
