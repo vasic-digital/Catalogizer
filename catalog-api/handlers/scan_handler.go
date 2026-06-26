@@ -293,7 +293,7 @@ func (h *ScanHandler) GetScanStatus(c *gin.Context) {
 // loadStorageRoot reads a StorageRoot from the database by ID.
 func (h *ScanHandler) loadStorageRoot(ctx context.Context, id int64) (*models.StorageRoot, error) {
 	row := h.db.QueryRowContext(ctx,
-		`SELECT id, name, protocol, host, port, path, username, password, domain, enabled, max_depth
+		`SELECT id, name, protocol, host, port, path, username, password, domain, options, enabled, max_depth
 		 FROM storage_roots WHERE id = ?`, id)
 
 	var root models.StorageRoot
@@ -301,7 +301,7 @@ func (h *ScanHandler) loadStorageRoot(ctx context.Context, id int64) (*models.St
 		&root.ID, &root.Name, &root.Protocol,
 		&root.Host, &root.Port, &root.Path,
 		&root.Username, &root.Password, &root.Domain,
-		&root.Enabled, &root.MaxDepth,
+		&root.Options, &root.Enabled, &root.MaxDepth,
 	); err != nil {
 		return nil, err
 	}
