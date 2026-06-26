@@ -3,13 +3,18 @@
 §11.4.107(10) self-validation for the §11.4.170 layout oracle.
 
 An analyzer that PASSes its golden-BAD fixture is itself a bluff gate. This guard
-runs visual_proof_layout_oracle.py against committed REAL device-capture fixtures
-and asserts:
-  - golden_good_home.png        -> PASS  (clean home, must not false-FAIL)
-  - golden_bad_giant_poster.png -> FAIL  (the §11.4.170 giant-poster signature)
+runs visual_proof_layout_oracle.py against committed fixtures and asserts:
+  - golden_good_home.png                  -> PASS  (clean home, must not false-FAIL)
+  - golden_bad_giant_poster.png           -> FAIL  (the §11.4.170 giant-poster signature)
+  - golden_bad_interior_blank_bgcolor.png -> FAIL  (the L1 evasion: a giant blank box
+                                                    BELOW the fg brightness cutoff that
+                                                    the foreground check alone misses)
 
-Both fixtures are genuine on-device captures from MIBOX4 (2026-06-26):
-the giant-poster detail screen is the real forensic case §11.4.170 was written for.
+The first two fixtures are genuine on-device captures from MIBOX4 (2026-06-26): the
+giant-poster detail screen is the real forensic case §11.4.170 was written for. The third
+is synthesized by make_interior_blank_fixture.py to reproduce review finding L1 exactly —
+the foreground giant-widget check sees frac=0.0 (would PASS) while the interior-blank check
+FAILs it, proving the new check genuinely closes L1 (not by weakening the existing check).
 
 Exit 0 = oracle is trustworthy; non-zero = oracle is a bluff gate / over-sensitive.
 """
@@ -20,8 +25,9 @@ ORACLE = os.path.join(HERE, "..", "visual_proof_layout_oracle.py")
 FIX = os.path.join(HERE, "fixtures")
 
 CASES = [
-    ("golden_good_home.png", "PASS"),        # clean home -> must PASS
-    ("golden_bad_giant_poster.png", "FAIL"), # giant poster -> must FAIL
+    ("golden_good_home.png", "PASS"),                      # clean home -> must PASS
+    ("golden_bad_giant_poster.png", "FAIL"),               # giant poster -> must FAIL
+    ("golden_bad_interior_blank_bgcolor.png", "FAIL"),     # L1 evasion blank -> must FAIL
 ]
 
 
@@ -43,9 +49,12 @@ def main():
         good = (got == expected)
         ok = ok and good
         extra = ""
-        if "checks" in res and "no_giant_unbounded_widget" in res["checks"]:
-            extra = " giant_frac=%s" % res["checks"]["no_giant_unbounded_widget"]["largest_featureless_fg_frac"]
-        print("[%s] %-28s expected=%s got=%s%s" %
+        ch = res.get("checks", {})
+        if "no_giant_unbounded_widget" in ch:
+            extra += " giant_fg_frac=%s" % ch["no_giant_unbounded_widget"]["largest_featureless_fg_frac"]
+        if "no_giant_interior_blank" in ch:
+            extra += " interior_frac=%s" % ch["no_giant_interior_blank"]["largest_interior_featureless_frac"]
+        print("[%s] %-39s expected=%s got=%s%s" %
               ("OK" if good else "BLUFF-GATE", img, expected, got, extra))
         if not good:
             print("   findings: %s" % res.get("findings"))

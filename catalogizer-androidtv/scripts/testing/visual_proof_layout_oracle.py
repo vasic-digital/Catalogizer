@@ -6,9 +6,16 @@ Reads a rendered PNG (host-side render OR on-device screencap) and asserts the
 §11.4.162 layout invariants ON REAL PIXELS — the proof a value/token-equality
 test can never give:
   - legibility:        OCR text runs present + per-word confidence >= floor
-  - no giant/unbounded: no single featureless foreground region exceeds a
-                        calibrated fraction of the canvas (the giant-button /
-                        giant-poster-placeholder signature, §11.4.170 forensic)
+  - no giant/unbounded: no single featureless FOREGROUND region (brighter than
+                        the dark page background) exceeds a calibrated fraction
+                        of the canvas (the giant-button / giant-poster-placeholder
+                        signature, §11.4.170 forensic)
+  - no interior blank: no single featureless region OF ANY BRIGHTNESS that is
+                        large AND sits in the canvas INTERIOR (does not hug the
+                        canvas border the way the true page background does) —
+                        catches a giant placeholder rendered AT/near the
+                        background color that the foreground check cannot see
+                        (closes review finding L1, §11.4.107(10))
   - no label overlap:  no two OCR text boxes overlap (label-over-label)
   - on-screen:         text boxes lie within the canvas (no clipping/off-screen)
 
@@ -26,15 +33,25 @@ Exit: 0 = PASS, 1 = FAIL, 2 = ERROR (unreadable / tool absent — honest §11.4.
 
 HONEST LIMITATIONS (§11.4.6 — an anti-bluff analyzer MUST name what it cannot catch;
 confirmed by independent review 2026-06-26):
-  L1 (giant-widget blind spot): the giant-unbounded-widget detector keys on a
-     featureless foreground region BRIGHTER than the dark page background
-     (gray > bg_brightness_max). A giant featureless placeholder rendered in the
-     EXACT background color (gray <= bg_brightness_max) on an otherwise-legible
-     screen EVADES this check (frac=0.0). Narrow in practice — real Compose
-     unloaded/placeholder surfaces are mid-gray (>=45) and ARE caught — but a
-     near-background-colored giant blank is not. FOLLOW-UP: add an interior-blank
-     check (giant featureless region NOT touching the canvas border, even at bg
-     color, distinguishes a centered placeholder pill from the true background).
+  L1 (giant-widget at background color) — CLOSED 2026-06-26 by the interior-blank
+     check (check #3 below, no_giant_interior_blank). The foreground giant-widget
+     detector (#2) keys on a featureless region BRIGHTER than the dark page
+     background (gray > bg_brightness_max), so a giant featureless placeholder
+     rendered BELOW that cutoff (gray <= bg_brightness_max) used to EVADE it
+     (frac=0.0). The interior-blank check now builds a featureless mask over ALL
+     brightness and flags any large featureless component that sits in the canvas
+     INTERIOR (low canvas-border contact) — the true page background hugs the
+     border (contact ~1.0) and is NOT flagged, while a centered placeholder box
+     (contact ~0.0) IS. Self-validated by the golden_bad_interior_blank_bgcolor
+     fixture (a gray~38 box, BELOW the gray>40 fg cutoff, that PASSes the #2 check
+     and FAILs the #3 check). RESIDUAL LIMIT (honest §11.4.6): a blank rendered at
+     the EXACT background color/texture (color delta < ~the separating edge
+     contrast, so no edge breaks the featureless connectivity) merges with the
+     background into one border-touching component and is NOT separable — but such
+     a region is also ~invisible to the end user (it IS the background); and a
+     giant interior blank legitimately is a §11.4.170 defect, so a large intended
+     uniform interior surface (e.g. a full-screen player fill) would also flag —
+     by design, not a false positive for this mandate.
   L2 (legibility near-vacuous): min_legible_words=1 makes legibility a weak floor;
      the giant-widget check carries the actual §11.4.170 proof, not legibility.
   L3 (overlap/clip not yet golden-bad-guarded): the no_label_overlap and on_screen
@@ -45,17 +62,33 @@ confirmed by independent review 2026-06-26):
 """
 import sys, json, argparse
 
-# Calibrated on this project's real device captures (qa-results/device_qa_20260626/):
-#   golden-GOOD  catalogizer---androidtv-retry-005339.png        (clean home)
-#   golden-BAD   catalogizer---androidtv-tvshow-detail.png       (Inception giant poster)
-# The giant gray poster pill measured ~0.45-0.70 canvas-area; clean home's largest
-# featureless foreground blob (a card) measured well under 0.25. Threshold set at 0.32.
+# Calibrated on this project's real device captures (qa-results/device_qa_20260626/)
+# plus one synthesized L1-evasion fixture (§11.4.6 — thresholds set from measured
+# separation on THESE frames, recorded here with the measurements):
+#   golden-GOOD  golden_good_home.png                   (clean home; real MIBOX4 capture)
+#   golden-BAD   golden_bad_giant_poster.png            (Inception giant poster; real capture)
+#   golden-BAD   golden_bad_interior_blank_bgcolor.png  (synth: gray~38 interior box BELOW
+#                                                         the gray>40 fg cutoff — the L1 evasion)
+# Measured (interior featureless mask, std<=6.0, OPEN 9x9, all-brightness, connected comps):
+#   clean home   -> ONE featureless blob frac 0.82 hugging the border (contact 0.99) => NOT interior
+#   giant poster -> a featureless interior blob frac 0.57 contact 0.00 (also caught by the fg check)
+#   synth blank  -> a featureless interior blob frac 0.59 contact 0.00; fg check sees frac 0.00
+# The giant gray poster pill measured ~0.45-0.70 canvas-area in the FG check; clean home's
+# largest featureless FG blob (a card) measured well under 0.25 (fg threshold 0.32). For the
+# interior check, the clean-home background's border contact is ~1.0 and the two defect blobs'
+# is ~0.0, a wide margin -> interior_border_contact_max set at 0.10.
 THRESHOLDS = {
     "giant_region_area_frac_max": 0.32,  # > this featureless fg fraction => giant-unbounded FAIL
     "ocr_min_conf": 55,                  # per-word tesseract confidence floor
     "min_legible_words": 1,              # at least one legible text run expected
     "bg_brightness_max": 40,             # gray<=this is treated as page background (dark navy ~10-25)
     "featureless_std_max": 12.0,         # local-stddev <= this => featureless (no texture/text)
+    # --- interior-blank check (closes L1): featureless region of ANY brightness ---
+    "interior_featureless_std_max": 6.0,    # lower std floor so a low-contrast box edge breaks
+                                            # featureless connectivity & separates box from bg
+    "interior_region_area_frac_max": 0.32,  # > this interior featureless fraction => blank FAIL
+    "interior_border_contact_max": 0.10,    # component touching < this of the canvas border is
+                                            # INTERIOR (not the true page background, contact ~1.0)
 }
 
 
@@ -150,7 +183,53 @@ def analyze(path, min_conf):
             "(the §11.4.170 giant-poster/giant-button signature)"
             % (largest_frac * 100, THRESHOLDS["giant_region_area_frac_max"] * 100, largest_box))
 
-    # ---- (3) label-over-label overlap ----
+    # ---- (3) giant INTERIOR blank at/near background color (closes L1) ----
+    # Foreground check (2) is blind to a featureless region rendered at/below the page
+    # background brightness (gray <= bg_brightness_max). Build a featureless mask over ALL
+    # brightness with a lower std floor (so a low-contrast box edge breaks featureless
+    # connectivity and the box separates from the bg), connected-component it, and flag any
+    # LARGE component whose canvas-border contact is LOW. The true page background hugs the
+    # canvas border (contact ~1.0) and is exonerated; a centered placeholder pill (contact
+    # ~0.0) is flagged even at background color.
+    istd = np.sqrt(np.clip(mean_sq - mean * mean, 0, None))  # reuse mean/mean_sq from above
+    ifeat = (istd <= THRESHOLDS["interior_featureless_std_max"]).astype("uint8")
+    ifeat = cv2.morphologyEx(ifeat, cv2.MORPH_OPEN, np.ones((9, 9), "uint8"))
+    inn, ilabels, istats, _ = cv2.connectedComponentsWithStats(ifeat, connectivity=8)
+    border_lbls = np.concatenate([ilabels[0, :], ilabels[h - 1, :],
+                                  ilabels[:, 0], ilabels[:, w - 1]])
+    border_counts = np.bincount(border_lbls.ravel(), minlength=inn)
+    perimeter = 2.0 * (w + h)
+    interior_frac = 0.0
+    interior_contact = 1.0
+    interior_box = None
+    for lbl in range(1, inn):
+        frac = istats[lbl, cv2.CC_STAT_AREA] / canvas_area
+        if frac < THRESHOLDS["interior_region_area_frac_max"]:
+            continue
+        contact = border_counts[lbl] / perimeter
+        if contact < THRESHOLDS["interior_border_contact_max"] and frac > interior_frac:
+            interior_frac = frac
+            interior_contact = round(float(contact), 4)
+            interior_box = [int(istats[lbl, cv2.CC_STAT_LEFT]), int(istats[lbl, cv2.CC_STAT_TOP]),
+                            int(istats[lbl, cv2.CC_STAT_WIDTH]), int(istats[lbl, cv2.CC_STAT_HEIGHT])]
+    interior_ok = interior_frac <= 0.0  # nothing large + interior found => OK
+    checks["no_giant_interior_blank"] = {
+        "pass": bool(interior_ok),
+        "largest_interior_featureless_frac": round(interior_frac, 4),
+        "border_contact": interior_contact if interior_box else None,
+        "area_frac_threshold": THRESHOLDS["interior_region_area_frac_max"],
+        "border_contact_threshold": THRESHOLDS["interior_border_contact_max"],
+        "region_bbox_xywh": interior_box,
+    }
+    if not interior_ok:
+        findings.append(
+            "giant INTERIOR featureless blank covers %.1f%% of canvas (border-contact %.2f < %.2f) "
+            "at bbox %s — a placeholder/blank at/near the background color the foreground check "
+            "cannot see (§11.4.170 giant-unbounded signature, L1)"
+            % (interior_frac * 100, interior_contact,
+               THRESHOLDS["interior_border_contact_max"], interior_box))
+
+    # ---- (4) label-over-label overlap ----
     overlaps = 0
     overlap_pairs = []
     for i in range(len(boxes)):
@@ -171,7 +250,7 @@ def analyze(path, min_conf):
     if overlaps:
         findings.append("%d overlapping text boxes (label-over-label): %s" % (overlaps, overlap_pairs))
 
-    # ---- (4) on-screen / no clipping ----
+    # ---- (5) on-screen / no clipping ----
     clipped = 0
     for (x, y, bw, bh, txt, conf) in boxes:
         if x < 0 or y < 0 or x + bw > w or y + bh > h:
