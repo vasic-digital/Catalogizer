@@ -1,12 +1,12 @@
 # Discovered Findings — 2026-06-26 (during §11.4.170 work)
 
-**Status:** OPEN — tracked follow-ups. Captured by independent read-only subagents (§11.4.142/.150). No code changed. Evidence is the subagents' computed contrast ratios + file:line references.
+**Status:** FINDING-1 **RESOLVED** (both legs fixed + guarded, 2026-06-26) · FINDING-2 **OPEN** (operator-gated upstream renumber). Captured by independent read-only subagents (§11.4.142/.150); FINDING-1 fixed by independent subagents + conductor-reviewed/re-validated (§11.4.142). Evidence is computed contrast ratios + RED→GREEN test runs + commit refs.
 
 ---
 
-## FINDING-1 — Web + desktop carry the SAME sub-AA error-token-as-surface class as the phone (latent)
+## FINDING-1 — Web + desktop carry the SAME sub-AA error-token-as-surface class as the phone (latent) — RESOLVED
 
-**Type:** Bug (accessibility / WCAG). **Severity:** Medium (latent, not yet user-reachable). **Same class as phone fix `d3d00eab`.**
+**Type:** Bug (accessibility / WCAG). **Severity:** Medium (latent, not yet user-reachable). **Same class as phone fix `d3d00eab`.** **Status:** Fixed (→ both legs), 2026-06-26.
 
 The defect: a dark error color token (`#EF4444`) used as an error **surface/background** paired with a light foreground (`#F8FAFC`) → contrast **3.60:1**, below WCAG AA 4.5:1 for normal text (passes only as large text/UI ≥3:1).
 
@@ -18,7 +18,14 @@ The defect: a dark error color token (`#EF4444`) used as an error **surface/back
 
 Neither client has a WCAG contrast oracle guarding the destructive pair (desktop `tokens.test.ts` only checks tokens.ts↔tokens.css drift) — the exact gap that let the phone defect ship.
 
-**Recommended remediation (NEEDS §11.4.142 review — production change):** apply the same M3-tonal fix as the phone (raise the dark error *surface* tone toward `#FFB4AB` and/or darken the on-error foreground) so dark-mode error surfaces reach ≥4.5:1; add a WCAG contrast oracle test (assert every error-surface↔foreground pair ≥4.5:1) to BOTH web and desktop. Desktop is the priority (wired + latent); web is dormant but should be fixed at the token source to prevent future wiring.
+**RESOLUTION (2026-06-26 — §11.4.115 RED→GREEN, §11.4.145 impact-reasoned, §11.4.142 conductor-reviewed + re-validated):**
+
+| Leg | Commit | Fix | Before→After | New regression guard (§11.4.135) |
+|---|---|---|---|---|
+| desktop (WIRED, priority) | `dac3fc6e` | dark `--destructive-foreground` `--cz-neutral-foreground`(#F8FAFC) → `--cz-neutral-background`(#020817); **surface left intact** because `--destructive` is dual-purpose (also `text-destructive` error text on LoginPage near-black bg — §11.4.145 fix-A-creates-B avoided) | **3.59:1 → 5.32:1** | `catalogizer-desktop/src/styles/wcag_contrast.test.ts` (vitest, 5/5; self-validated golden-bad) |
+| web (dormant) | `1afec970` | dark `--destructive` #EF4444 → red-700 #B91C1C (token source `tokens.ts` + `index.css` drift-synced) | **3.59:1 → 6.17:1** | `catalog-web/src/styles/__tests__/wcag_contrast.test.ts` (vitest, 3/3; self-validated golden-bad) |
+
+Both guards parse the **actual edited token** out of the CSS and compute the WCAG sRGB-relative-luminance ratio (no hardcoded assertion), each with a §11.4.107(10) self-validation case (golden-bad #EF4444/#F8FAFC computes < 4.5). RED captured on the pre-fix token (3.59:1 FAIL), GREEN after (≥ AA). Light themes unchanged (4.83:1). Conductor independently re-ran both suites (web 3/3, desktop 5/5 PASS) before commit. These two tests are now the standing §11.4.135 regression guards — vitest auto-discovers `*.test.ts`, so they run on every `npm test`.
 
 ---
 
