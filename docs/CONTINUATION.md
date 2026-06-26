@@ -3,8 +3,8 @@
 > Live work-state document per Constitution **§12.10 (CONTINUATION)** and
 > **§11.4.131 (standing resumption file)**. Read this first, then continue §11.4.126 loop.
 
-**Revision:** 4
-**Last modified:** 2026-06-26T15:30:00Z
+**Revision:** 5
+**Last modified:** 2026-06-26T18:00:00Z
 <!-- §11.4.44 revision header — bump Revision and Last modified on every edit -->
 
 ---
@@ -15,7 +15,7 @@
 |------|-------|
 | Parent repo path | `/Volumes/T7/Projects/catalogizer` |
 | Parent branch | `main` |
-| Parent HEAD | `5d123309` (SSRF hardening) |
+| Parent HEAD | `3966ce51` (eventbus bridge refined) |
 | Constitution submodule | `submodules/constitution` pinned to `main` |
 | Deployment | catalog-api `HOST=0.0.0.0` at 192.168.0.132:8080, sqlite, TMDB key active |
 
@@ -31,7 +31,9 @@ discovery → scan → catalog populated with real media from the Synology NAS a
 
 Epic complete when:
 - ~~All 7 PWUs committed~~ **DONE** — 7/7 committed with rock-solid captured evidence
-- SSRF hardening committed (4 findings closed)
+- ~~SSRF hardening committed~~ **DONE** (4 findings closed)
+- ~~Anti-bluff guessing debt killed~~ **DONE**
+- ~~EventBus → WebSocket bridge live~~ **DONE** (cfae03b8, 3966ce51)
 - Full rebuild → long scan of real NAS → catalog populated
 - Full §11.4.169 test matrix GREEN (unit + integration + challenges + HelixQA)
 - No open anti-bluff issues in the SMB/service layer
@@ -39,21 +41,26 @@ Epic complete when:
 
 ---
 
-## 2. DONE this session (7 identity-epic PWUs + anti-bluff + SSRF hardening)
+## 2. DONE this session (14 commits — identity-epic ladder + EventBus bridge)
 
-| PWU/Item | Commit | Summary | Evidence |
-|---|---|---|---|
-| **#1** Real share enum | `0111695e` | `enumerateShares` guesses → real `ListSharenames()` SRVSVC | RED→GREEN vs real Synology .111 |
-| **#2** Anon-first multi-identity probe | `ab3b04e3` | `ProbeHostWithIdentities` — guest first, then each identity | .213 binds #2, .111 binds #1 — LIVE |
-| **#3** Secure ID store design | `c402c170` | Design doc; reuse `securestorage` submodule (AES-256-GCM, wired) | HTML + PDF siblings |
-| **#4** Bindings table V19 | `83b1a02c` | Migration + model + repository (Upsert/List/Delete) | 4/4 tests, NoSecretLeak proven |
-| **#5** Web UI | `87dfa39b` | Identity Manager + Discovered Shares (108 tests) | 34 new + 74 existing all PASS |
-| **#6** Binding ingester | `d03b6d15` | `IngestProbeResult`→storage\_roots, idempotent, NULL secrets | 5/5 tests, full suite GREEN 22s |
-| **#7** HTTP handlers + routes | `54039bd7` | Wire identity-bind + discovery routes into main.go, regression guards | Full build green, handlers live |
-| Anti-bluff: kill guessing | `d7783c47` | Removed `getCommonShares` — unreachable host → honest error | Test asserts error, not fabricated names |
-| SSRF hardening | `5d123309` | HTTP timeout + URL validation + Host header + body size limit | 4 findings closed, build green |
+| # | Commit | Summary | Evidence |
+|---|--------|---------|----------|
+| 1 | `0111695e` | Real share enum — `enumerateShares` guesses → real `ListSharenames()` SRVSVC | RED→GREEN vs real Synology .111 |
+| 2 | `ab3b04e3` | Anon-first multi-identity probe — `ProbeHostWithIdentities`, guest first then each identity | .213 binds #2, .111 binds #1 — LIVE |
+| 3 | `c402c170` | Secure ID store design doc; reuse `securestorage` submodule (AES-256-GCM, wired) | HTML + PDF siblings |
+| 4 | `83b1a02c` | Bindings table V19 — migration + model + repository (Upsert/List/Delete) | 4/4 tests, NoSecretLeak proven |
+| 5 | `d7783c47` | Anti-bluff: kill `getCommonShares` guessing — unreachable host → honest error | Test asserts error, not fabricated names |
+| 6 | `87dfa39b` | Web UI — Identity Manager + Discovered Shares (108 tests) | 34 new + 74 existing all PASS |
+| 7 | `d03b6d15` | Binding ingester — `IngestProbeResult`→storage_roots, idempotent, NULL secrets | 5/5 tests, full suite GREEN 22s |
+| 8 | `54039bd7` | HTTP handlers + routes — wire identity-bind + discovery routes into main.go | Full build green, handlers live |
+| 9 | `5d123309` | SSRF hardening — HTTP timeout + URL validation + Host header + body size limit | 4 findings closed, build green |
+| 10 | `5b775a0c` | CONTINUATION.md synced to identity-epic complete (Rev 4, HEAD 5d123309) | Doc sync |
+| 11 | `e8772b52` | Scanner resolves `identity_index` into SMB credentials | Fix chain for identity resolution |
+| 12 | `46fffbc7` | `loadStorageRoot` includes `options` column — enables `identity_index` resolution | Fix chain for identity resolution |
+| 13 | `cfae03b8` | **EventBus → WebSocket bridge** — real-time scanner events pushed to Web UI | Comprehensive test matrix GREEN (§11.4.169) |
+| 14 | `3966ce51` | EventBus bridge refined — fmt import cleanup, scanner event wiring, main.go cleanup | Refinement on cfae03b8 |
 
-All 7 PWUs + anti-bluff fix + SSRF hardening committed. 8/8 remotes fetched (all caught up).
+All 14 commits committed. 8/8 remotes fetched (all caught up).
 Both operator-CRITICAL UI defects (giant box + covers) resolved previously.
 
 ---
@@ -62,13 +69,14 @@ Both operator-CRITICAL UI defects (giant box + covers) resolved previously.
 
 | Activity | Detail | Status |
 |----------|--------|--------|
-| **Background test suite** | `go test ./... -p 2 -parallel 2 -count=1 -v` (PID 39178) | In flight — tailing qa-results/recordings/2026-06-26/5d123309/full_go_test_output.log |
-| **catalog-api server** | `./build/catalog-api` (PID 32808) | Running at 192.168.0.132:8080, sqlite, TMDB key active |
-| **7 PWUs + SSRF fix** | All 7 identity-epic PWUs + anti-bluff fix + SSRF hardening | Committed, HEAD `5d123309`. 8 remotes fetched (all up to date) |
+| **Background go test ./...** | `GOMAXPROCS=3 go test ./... -p 2 -parallel 2 -count=1 -timeout 300s` (PID 64251) | In flight — output at `qa-results/recordings/2026-06-26/` |
+| **catalog-api server** | `./build/catalog-api` (PID 48044) | Running at 192.168.0.132:8080, sqlite, TMDB key active, identity handlers live |
+| **Host monitoring** | `host_stats.log` + `mibox4_keepalive.log` | Continuous recording at `qa-results/recordings/2026-06-26/5d123309/` (host_stats, mibox4 keepalive) |
+| **Identity-epic + EventBus** | All 14 commits from `0111695e` → `3966ce51` | HEAD `3966ce51`, 8 remotes fetched (all up to date) |
 
 ---
 
-## 4. REMAINING (after 7 PWUs + SSRF hardening)
+## 4. REMAINING
 
 | Item | What | Priority |
 |------|------|----------|
