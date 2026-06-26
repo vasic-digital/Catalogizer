@@ -346,11 +346,19 @@ func (s *UniversalScanner) storageRootToSettings(root *models.StorageRoot) map[s
 		if root.Path != nil {
 			settings["share"] = *root.Path
 		}
-		if root.Username != nil {
-			settings["username"] = *root.Username
+		// Resolve credentials: direct fields first, then identity_index from options.
+		// The probe-and-ingest pipeline stores {"identity_index": N} in options and
+		// leaves username/password NULL — the scanner must resolve the identity from
+		// CATALOGIZER_IDENTITY_N_* env vars (§11.4.6 no-guessing, §11.4.10 no secret log).
+		user, pass, dom := ResolveSMBIdentity(root)
+		if user != "" {
+			settings["username"] = user
 		}
-		if root.Password != nil {
-			settings["password"] = *root.Password
+		if pass != "" {
+			settings["password"] = pass
+		}
+		if dom != "" {
+			settings["domain"] = dom
 		}
 		if root.Domain != nil {
 			settings["domain"] = *root.Domain

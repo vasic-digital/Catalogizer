@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"catalogizer/internal/services"
 	"catalogizer/models"
 	"catalogizer/repository"
 	"catalogizer/smb"
@@ -336,24 +337,24 @@ func (h *CopyHandler) createSmbClient(storageRoot *models.StorageRoot) (*smb.Smb
 	if storageRoot.Path != nil {
 		share = *storageRoot.Path
 	}
-	username := ""
+		user, pass, dom := services.ResolveSMBIdentity(storageRoot)
 	if storageRoot.Username != nil {
-		username = *storageRoot.Username
+		user = *storageRoot.Username
 	}
-	domain := ""
 	if storageRoot.Domain != nil {
-		domain = *storageRoot.Domain
+		dom = *storageRoot.Domain
 	}
 
 	smbConfig := &smb.SmbConfig{
 		Host:     host,
 		Port:     port,
 		Share:    share,
-		Username: username,
-		Domain:   domain,
+		Username: user,
+		Password: pass,
+		Domain:   dom,
 	}
 
-	connectionKey := fmt.Sprintf("%s:%d:%s:%s", host, port, share, username)
+	connectionKey := fmt.Sprintf("%s:%d:%s:%s", host, port, share, user)
 	return h.smbPool.GetConnection(connectionKey, smbConfig)
 }
 

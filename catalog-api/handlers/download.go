@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"catalogizer/internal/services"
 	"catalogizer/models"
 	"catalogizer/repository"
 	"catalogizer/smb"
@@ -117,24 +118,24 @@ func (h *DownloadHandler) DownloadFile(c *gin.Context) {
 	if smbRoot.Path != nil {
 		share = *smbRoot.Path
 	}
-	username := ""
+		user, pass, dom := services.ResolveSMBIdentity(smbRoot)
 	if smbRoot.Username != nil {
-		username = *smbRoot.Username
+		user = *smbRoot.Username
 	}
-	domain := ""
 	if smbRoot.Domain != nil {
-		domain = *smbRoot.Domain
+		dom = *smbRoot.Domain
 	}
 
 	smbConfig := &smb.SmbConfig{
 		Host:     host,
 		Port:     port,
 		Share:    share,
-		Username: username,
-		Domain:   domain,
+		Username: user,
+		Password: pass,
+		Domain:   dom,
 	}
 
-	connectionKey := fmt.Sprintf("%s:%d:%s:%s", host, port, share, username)
+	connectionKey := fmt.Sprintf("%s:%d:%s:%s", host, port, share, user)
 	smbClient, err := h.smbPool.GetConnection(connectionKey, smbConfig)
 	if err != nil {
 		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to connect to SMB share", err)
@@ -241,24 +242,24 @@ func (h *DownloadHandler) DownloadDirectory(c *gin.Context) {
 	if smbRoot.Path != nil {
 		share = *smbRoot.Path
 	}
-	username := ""
+		user, pass, dom := services.ResolveSMBIdentity(smbRoot)
 	if smbRoot.Username != nil {
-		username = *smbRoot.Username
+		user = *smbRoot.Username
 	}
-	domain := ""
 	if smbRoot.Domain != nil {
-		domain = *smbRoot.Domain
+		dom = *smbRoot.Domain
 	}
 
 	smbConfig := &smb.SmbConfig{
 		Host:     host,
 		Port:     port,
 		Share:    share,
-		Username: username,
-		Domain:   domain,
+		Username: user,
+		Password: pass,
+		Domain:   dom,
 	}
 
-	connectionKey := fmt.Sprintf("%s:%d:%s:%s", host, port, share, username)
+	connectionKey := fmt.Sprintf("%s:%d:%s:%s", host, port, share, user)
 	smbClient, err := h.smbPool.GetConnection(connectionKey, smbConfig)
 	if err != nil {
 		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to connect to SMB share", err)

@@ -1,8 +1,37 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Header } from '../Header'
 import { useAuth } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
+
+// Shared providers wrapper — wraps children with every context provider the
+// Header component (and its children, e.g. ThemeToggle → useTheme) requires.
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false } },
+})
+
+function AllProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        {children}
+      </ThemeProvider>
+    </QueryClientProvider>
+  )
+}
+
+// Custom render that provides ALL context providers the component tree needs.
+// Wraps children in AllProviders + MemoryRouter so tests can focus on assertions.
+const customRender = (ui: React.ReactElement) =>
+  render(ui, {
+    wrapper: ({ children }) => (
+      <AllProviders>
+        <MemoryRouter>{children}</MemoryRouter>
+      </AllProviders>
+    ),
+  })
 
 // Mock AuthContext
 const mockLogout = vi.fn()
@@ -40,11 +69,7 @@ describe('Header', () => {
         logout: mockLogout,
       })
 
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       expect(screen.getByText('Catalogizer')).toBeInTheDocument()
       expect(screen.getByText('C')).toBeInTheDocument()
@@ -57,11 +82,7 @@ describe('Header', () => {
         logout: mockLogout,
       })
 
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const logoLink = screen.getByText('Catalogizer').closest('a')
       expect(logoLink).toHaveAttribute('href', '/')
@@ -78,11 +99,7 @@ describe('Header', () => {
     })
 
     it('does not display navigation links when not authenticated', () => {
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       expect(screen.queryByText('Dashboard')).not.toBeInTheDocument()
       expect(screen.queryByText('Media')).not.toBeInTheDocument()
@@ -90,21 +107,13 @@ describe('Header', () => {
     })
 
     it('does not display search bar when not authenticated', () => {
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       expect(screen.queryByPlaceholderText('Search movies, shows, music...')).not.toBeInTheDocument()
     })
 
     it('displays Login and Sign Up buttons when not authenticated', () => {
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /sign up/i })).toBeInTheDocument()
@@ -112,11 +121,7 @@ describe('Header', () => {
 
     it('navigates to login page when Login button is clicked', async () => {
       const user = userEvent.setup()
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       await user.click(screen.getByRole('button', { name: /login/i }))
       expect(mockNavigate).toHaveBeenCalledWith('/login')
@@ -124,11 +129,7 @@ describe('Header', () => {
 
     it('navigates to register page when Sign Up button is clicked', async () => {
       const user = userEvent.setup()
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       await user.click(screen.getByRole('button', { name: /sign up/i }))
       expect(mockNavigate).toHaveBeenCalledWith('/register')
@@ -151,11 +152,7 @@ describe('Header', () => {
     })
 
     it('displays navigation links when authenticated', () => {
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       expect(screen.getByText('Dashboard')).toBeInTheDocument()
       expect(screen.getByText('Media')).toBeInTheDocument()
@@ -163,31 +160,19 @@ describe('Header', () => {
     })
 
     it('does not display Admin link for regular users', () => {
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       expect(screen.queryByText('Admin')).not.toBeInTheDocument()
     })
 
     it('displays search bar when authenticated', () => {
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       expect(screen.getAllByPlaceholderText('Search movies, shows, music...').length).toBeGreaterThan(0)
     })
 
     it('displays user greeting with first name', () => {
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       expect(screen.getByText(/Welcome, Test/i)).toBeInTheDocument()
     })
@@ -203,32 +188,29 @@ describe('Header', () => {
         logout: mockLogout,
       })
 
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       expect(screen.getByText(/Welcome, testuser/i)).toBeInTheDocument()
     })
 
     it('navigates to profile page when profile button is clicked', async () => {
       const user = userEvent.setup()
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
-      // Find the profile button by its icon (User icon)
-      const profileButtons = screen.getAllByRole('button')
-      const profileButton = profileButtons.find(btn => btn.querySelector('svg'))
+      // Find the profile button by its icon (User icon).  ThemeToggle also
+      // renders an SVG but is identified by data-testid — exclude it so the
+      // selector stays robust regardless of rendering order.
+      const themeToggle = screen.getByTestId('theme-toggle')
+      const allButtons = screen.getAllByRole('button')
+      const profileButton = allButtons.find(
+        (btn) => btn.querySelector('svg') && btn !== themeToggle,
+      )
 
       if (profileButton) {
         await user.click(profileButton)
       }
 
-      // Profile button is the first icon button
+      // Profile button is the first icon button (after ThemeToggle)
       expect(mockNavigate).toHaveBeenCalled()
     })
 
@@ -236,11 +218,7 @@ describe('Header', () => {
       const user = userEvent.setup()
       mockLogout.mockResolvedValue(undefined)
 
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       // Find logout button (LogOut icon) - it's the last icon button in desktop menu
       const iconButtons = screen.getAllByRole('button').filter(btn =>
@@ -259,11 +237,7 @@ describe('Header', () => {
       const user = userEvent.setup()
       mockLogout.mockResolvedValue(undefined)
 
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const iconButtons = screen.getAllByRole('button').filter(btn =>
         btn.querySelector('svg') && btn.className.includes('h-8 w-8')
@@ -281,11 +255,7 @@ describe('Header', () => {
       const user = userEvent.setup()
       mockLogout.mockRejectedValue(new Error('Logout failed'))
 
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const iconButtons = screen.getAllByRole('button').filter(btn =>
         btn.querySelector('svg') && btn.className.includes('h-8 w-8')
@@ -318,21 +288,13 @@ describe('Header', () => {
     })
 
     it('displays Admin link for admin users', () => {
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       expect(screen.getByText('Admin')).toBeInTheDocument()
     })
 
     it('Admin link navigates to admin page', () => {
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const adminLink = screen.getByText('Admin').closest('a')
       expect(adminLink).toHaveAttribute('href', '/admin')
@@ -353,33 +315,21 @@ describe('Header', () => {
     })
 
     it('Dashboard link navigates to dashboard page', () => {
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const dashboardLink = screen.getByText('Dashboard').closest('a')
       expect(dashboardLink).toHaveAttribute('href', '/dashboard')
     })
 
     it('Media link navigates to media page', () => {
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const mediaLink = screen.getByText('Media').closest('a')
       expect(mediaLink).toHaveAttribute('href', '/media')
     })
 
     it('Analytics link navigates to analytics page', () => {
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const analyticsLink = screen.getByText('Analytics').closest('a')
       expect(analyticsLink).toHaveAttribute('href', '/analytics')
@@ -401,11 +351,7 @@ describe('Header', () => {
     })
 
     it('mobile menu is closed by default', () => {
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       // Mobile menu content should not be visible
       const mobileLinks = screen.queryAllByText('Dashboard')
@@ -415,11 +361,7 @@ describe('Header', () => {
 
     it('toggles mobile menu when menu button is clicked', async () => {
       const user = userEvent.setup()
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       // Find the mobile menu toggle button
       const menuButtons = screen.getAllByRole('button')
@@ -442,11 +384,7 @@ describe('Header', () => {
 
     it('displays mobile navigation links when menu is open', async () => {
       const user = userEvent.setup()
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const menuButtons = screen.getAllByRole('button')
       const menuToggle = menuButtons.find(btn =>
@@ -467,11 +405,7 @@ describe('Header', () => {
 
     it('displays mobile search bar when menu is open and user is authenticated', async () => {
       const user = userEvent.setup()
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const menuButtons = screen.getAllByRole('button')
       const menuToggle = menuButtons.find(btn =>
@@ -491,11 +425,7 @@ describe('Header', () => {
 
     it('displays user profile links in mobile menu', async () => {
       const user = userEvent.setup()
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const menuButtons = screen.getAllByRole('button')
       const menuToggle = menuButtons.find(btn =>
@@ -515,11 +445,7 @@ describe('Header', () => {
 
     it('displays username in mobile menu', async () => {
       const user = userEvent.setup()
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const menuButtons = screen.getAllByRole('button')
       const menuToggle = menuButtons.find(btn =>
@@ -541,11 +467,7 @@ describe('Header', () => {
       const user = userEvent.setup()
       mockLogout.mockResolvedValue(undefined)
 
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const menuButtons = screen.getAllByRole('button')
       const menuToggle = menuButtons.find(btn =>
@@ -579,11 +501,7 @@ describe('Header', () => {
 
     it('displays Login and Sign Up in mobile menu when not authenticated', async () => {
       const user = userEvent.setup()
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const menuButtons = screen.getAllByRole('button')
       const menuToggle = menuButtons.find(btn =>
@@ -602,11 +520,7 @@ describe('Header', () => {
 
     it('does not display navigation links in mobile menu when not authenticated', async () => {
       const user = userEvent.setup()
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const menuButtons = screen.getAllByRole('button')
       const menuToggle = menuButtons.find(btn =>
@@ -639,11 +553,7 @@ describe('Header', () => {
 
     it('displays Admin link in mobile menu for admin users', async () => {
       const user = userEvent.setup()
-      render(
-        <MemoryRouter>
-          <Header />
-        </MemoryRouter>
-      )
+      customRender(<Header />)
 
       const menuButtons = screen.getAllByRole('button')
       const menuToggle = menuButtons.find(btn =>

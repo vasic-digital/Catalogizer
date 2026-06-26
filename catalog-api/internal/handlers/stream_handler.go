@@ -242,11 +242,16 @@ func storageRootToSettings(root *root_models.StorageRoot) map[string]interface{}
 		if root.Path != nil {
 			settings["share"] = *root.Path
 		}
-		if root.Username != nil {
-			settings["username"] = *root.Username
+		// Resolve credentials: direct fields first, then identity_index from options.
+		user, pass, dom := services.ResolveSMBIdentity(root)
+		if user != "" {
+			settings["username"] = user
 		}
-		if root.Password != nil {
-			settings["password"] = *root.Password
+		if pass != "" {
+			settings["password"] = pass
+		}
+		if dom != "" {
+			settings["domain"] = dom
 		}
 		if root.Domain != nil {
 			settings["domain"] = *root.Domain
