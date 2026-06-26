@@ -445,6 +445,7 @@ func main() {
 	catalogService.SetDB(databaseDB)
 	smbService := services.NewSMBService(internalCfg, logger)
 	smbDiscoveryService := services.NewSMBDiscoveryService(logger)
+	bindingIngester := services.NewBindingIngester(databaseDB, logger)
 
 	// fileRepository is shared by stats, browse, and recommendation handlers
 	fileRepository := root_repository.NewFileRepository(databaseDB)
@@ -597,6 +598,7 @@ func main() {
 	streamHandler := handlers.NewStreamHandler(catalogService, databaseDB, clientFactory, logger)
 	copyHandler := handlers.NewCopyHandler(catalogService, smbService, cfg.Catalog.TempDir, logger)
 	smbDiscoveryHandler := handlers.NewSMBDiscoveryHandler(smbDiscoveryService, logger)
+	probeAndIngestHandler := handlers.NewProbeAndIngestHandler(smbDiscoveryService, bindingIngester, logger)
 	authHandler := root_handlers.NewAuthHandler(authService)
 	androidTVMediaHandler := root_handlers.NewAndroidTVMediaHandler(databaseDB)
 
@@ -1269,6 +1271,9 @@ func main() {
 			smbGroup.POST("/test", smbDiscoveryHandler.TestConnection)
 			smbGroup.GET("/test", smbDiscoveryHandler.TestConnectionGET)
 			smbGroup.POST("/browse", smbDiscoveryHandler.BrowseShare)
+			smbGroup.GET("/identities", smbDiscoveryHandler.ListIdentities)
+			smbGroup.POST("/probe", smbDiscoveryHandler.ProbeHost)
+		smbGroup.POST("/probe-and-ingest", probeAndIngestHandler.ProbeAndIngest)
 		}
 
 		// Scan endpoints

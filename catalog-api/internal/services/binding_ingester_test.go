@@ -199,6 +199,77 @@ func TestBindingIngester_IngestProbeResult(t *testing.T) {
 		// Binding now references identity 2.
 		verifyBinding(t, sqlDB, "nas2.local", "Shared", 2, "user2")
 	})
+
+	// TestZeroSharesAuthenticatedProbe is the §11.4.115 polarity guard: an
+	// authenticated probe result with ZERO non-IPC$ shares must NOT insert any
+	// storage_root — the probe succeeded on the host but there are no data
+	// shares to ingest. If a future change accidentally inserts a storage_root
+	// for an empty share list, this test FAILs (RED), proving the guard catches
+	// the regression.
+	t.Run("zero shares authenticated probe does not insert any root", func(t *testing.T) {
+		result := &SMBProbeResult{
+			Host:          "nas.empty.example.com",
+			Authenticated: true,
+			IdentityIndex: 1,
+			IdentityLabel: "browser",
+			Shares:        []SMBShareInfo{},
+		}
+
+		out, err := ingester.IngestProbeResult(context.Background(), result)
+		require.NoError(t, err)
+		require.Equal(t, 0, out.BoundShares, "0 shares → 0 bound shares")
+		require.Equal(t, 0, out.NewRoots, "0 shares → 0 new storage roots")
+
+		// Verify no storage_root was created.
+		var count int
+		err = sqlDB.QueryRow(
+			`SELECT COUNT(*) FROM storage_roots WHERE host = 'nas.empty.example.com'`,
+		).Scan(&count)
+		require.NoError(t, err)
+		require.Equal(t, 0, count, "no storage_root should exist for a host with zero shares")
+
+		// Verify no binding was created.
+		err = sqlDB.QueryRow(
+			`SELECT COUNT(*) FROM share_identity_bindings WHERE host = 'nas.empty.example.com'`,
+		).Scan(&count)
+		require.NoError(t, err)
+		require.Equal(t, 0, count, "no binding should exist for a host with zero shares")
+	})
+
+	// TestIdentityLabelSecretLeakGuard is the §11.4.10 secret-leak guard: an
+	// identity_label containing a SQL injection attempt or a tricky string is
+	// stored AS-IS (it's a label, not a credential), but MUST NOT leak a
+	// password or be interpreted as one. The label goes into the
+	// share_identity_binding.identity_label column verbatim — it's never
+	// executed as SQL, never interpreted as a password, and never copied into
+	// storage_root.username/password.
+	t.Run("identity label with tricky string is stored as-is, never interpreted as credential", func(t *testing.T) {
+		trickyLabel := "admin' OR '1'='1"
+		result := &SMBProbeResult{
+			Host:          "tricky.example.com",
+			Authenticated: true,
+			IdentityIndex: 2,
+			IdentityLabel: trickyLabel,
+			Shares: []SMBShareInfo{
+				{Host: "tricky.example.com", ShareName: "Data", Path: "\\\\tricky.example.com\\Data"},
+			},
+		}
+
+		out, err := ingester.IngestProbeResult(context.Background(), result)
+		require.NoError(t, err)
+		require.Equal(t, 1, out.BoundShares)
+		require.Equal(t, 1, out.NewRoots)
+
+		// The label must be stored verbatim — not sanitised, not escaped, just as-is.
+		verifyBinding(t, sqlDB, "tricky.example.com", "Data", 2, trickyLabel)
+
+		// SECURITY (§11.4.10): the storage_root must have NULL username and
+		// password — the tricky label must NOT end up in those columns.
+		verifyNoSecretsInStorageRoot(t, sqlDB, "tricky.example.com:Data")
+
+		// The storage_root.identity_index is the numeric index (2), not the label.
+		verifyStorageRoot(t, sqlDB, "tricky.example.com:Data", "smb", "tricky.example.com", "Data", 2)
+	})
 }
 
 // verifyStorageRoot checks a storage_roots row has the expected shape.

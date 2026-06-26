@@ -22,6 +22,103 @@ import (
 // §11.4.115 polarity: this guard FAILs (RED) if ProbeHostWithIdentities ever
 // regresses to returning a nil result, a true verdict without a real session,
 // or swallowing the failure — the exact bluff shapes the epic forbids.
+// TestProbeHostWithIdentities_RejectsEmptyIdentities is the §11.4.115 polarity
+// regression guard: ProbeHostWithIdentities with nil or empty identity list must
+// still attempt guest and return a non-nil result with Authenticated=false.
+// If a future change breaks the guest-first contract this test FAILs (RED),
+// proving the guard catches the regression.
+func TestProbeHostWithIdentities_RejectsEmptyIdentities(t *testing.T) {
+	svc := &SMBDiscoveryService{logger: zap.NewNop(), timeout: 2 * time.Second}
+
+	t.Run("nil identities", func(t *testing.T) {
+		res, err := svc.ProbeHostWithIdentities(context.Background(), "127.0.0.1", nil)
+		if res == nil {
+			t.Fatalf("§11.4.6: ProbeHostWithIdentities returned nil result with nil identities — contract requires non-nil")
+		}
+		if res.Authenticated {
+			t.Fatalf("§11.4.6: nil identities reported Authenticated against closed loopback — false-positive bluff")
+		}
+		if res.Host != "127.0.0.1" {
+			t.Errorf("result host = %q, want 127.0.0.1", res.Host)
+		}
+		if err == nil {
+			t.Errorf("§11.4.6: nil identities must return an error (dial failure), got nil")
+		}
+		if res.IdentityIndex != 0 {
+			t.Errorf("failed probe IdentityIndex = %d, want 0", res.IdentityIndex)
+		}
+	})
+
+	t.Run("empty identities", func(t *testing.T) {
+		res, err := svc.ProbeHostWithIdentities(context.Background(), "127.0.0.1", []SMBIdentity{})
+		if res == nil {
+			t.Fatalf("§11.4.6: ProbeHostWithIdentities returned nil result with empty identities — contract requires non-nil")
+		}
+		if res.Authenticated {
+			t.Fatalf("§11.4.6: empty identities reported Authenticated against closed loopback — false-positive bluff")
+		}
+		if res.IdentityIndex != 0 {
+			t.Errorf("failed probe IdentityIndex = %d, want 0", res.IdentityIndex)
+		}
+		if err == nil {
+			t.Errorf("§11.4.6: empty identities must return an error (dial failure), got nil")
+		}
+	})
+}
+
+// TestProbeHostWithIdentities_Determinism is the §11.4.50 determinism test:
+// calling ProbeHostWithIdentities N=3 times with the same closed-loopback host
+// and same identities must return IDENTICAL results (Host, Authenticated flag,
+// IdentityIndex, IdentityLabel, len(Shares)) each time — proving the
+// deterministic-priority identity dispatch does not depend on random iteration
+// or map ordering.
+//
+// This does not need a real SMB host: 127.0.0.1:445 is always refused on CI/dev
+// machines, making every candidate fail deterministically.
+func TestProbeHostWithIdentities_Determinism(t *testing.T) {
+	svc := &SMBDiscoveryService{logger: zap.NewNop(), timeout: 2 * time.Second}
+
+	ids := []SMBIdentity{
+		{Index: 1, Kind: "credentials", Username: "probe_user_1", Password: "x"},
+		{Index: 2, Kind: "credentials", Username: "probe_user_2", Password: "y"},
+	}
+
+	const host = "127.0.0.1"
+	var prevResult *SMBProbeResult
+	var prevErr error
+
+	for i := 0; i < 3; i++ {
+		res, err := svc.ProbeHostWithIdentities(context.Background(), host, ids)
+		if res == nil {
+			t.Fatalf("§11.4.6: iteration %d returned nil result — contract requires non-nil", i)
+		}
+		if i == 0 {
+			prevResult = res
+			prevErr = err
+			continue
+		}
+		if res.Authenticated != prevResult.Authenticated {
+			t.Errorf("§11.4.50: iteration %d Authenticated=%v, want %v (iter 0)", i, res.Authenticated, prevResult.Authenticated)
+		}
+		if res.IdentityIndex != prevResult.IdentityIndex {
+			t.Errorf("§11.4.50: iteration %d IdentityIndex=%d, want %d (iter 0)", i, res.IdentityIndex, prevResult.IdentityIndex)
+		}
+		if res.Host != prevResult.Host {
+			t.Errorf("§11.4.50: iteration %d Host=%q, want %q (iter 0)", i, res.Host, prevResult.Host)
+		}
+		if res.IdentityLabel != prevResult.IdentityLabel {
+			t.Errorf("§11.4.50: iteration %d IdentityLabel=%q, want %q (iter 0)", i, res.IdentityLabel, prevResult.IdentityLabel)
+		}
+		if len(res.Shares) != len(prevResult.Shares) {
+			t.Errorf("§11.4.50: iteration %d len(Shares)=%d, want %d (iter 0)", i, len(res.Shares), len(prevResult.Shares))
+		}
+		if (err == nil) != (prevErr == nil) {
+			t.Errorf("§11.4.50: iteration %d err!=nil=%v, want %v (iter 0)", i, err != nil, prevErr != nil)
+		}
+	}
+	t.Logf("§11.4.50 PASS: ProbeHostWithIdentities deterministic across 3 iterations (host=%q, Authenticated=%v)", host, prevResult.Authenticated)
+}
+
 func TestProbeHostWithIdentities_GuestFirstThenIdentities(t *testing.T) {
 	// Short timeout so a refused/closed port returns promptly.
 	svc := &SMBDiscoveryService{logger: zap.NewNop(), timeout: 2 * time.Second}

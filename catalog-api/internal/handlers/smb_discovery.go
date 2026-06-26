@@ -15,6 +15,20 @@ type SMBDiscoveryHandler struct {
 	logger  *zap.Logger
 }
 
+// ListIdentityInfo is a safe (no-secrets) representation of an SMB identity
+// returned by ListIdentities. Never exposes passwords or any secret material (§11.4.10).
+type ListIdentityInfo struct {
+	Index    int    `json:"index"`
+	Kind     string `json:"kind"`
+	Username string `json:"username"`
+	Label    string `json:"label"`
+}
+
+// ProbeHostRequest represents the request to probe a host with identity-based auth
+type ProbeHostRequest struct {
+	Host string `json:"host" binding:"required"`
+}
+
 // NewSMBDiscoveryHandler creates a new SMB discovery handler
 func NewSMBDiscoveryHandler(service *services.SMBDiscoveryService, logger *zap.Logger) *SMBDiscoveryHandler {
 	return &SMBDiscoveryHandler{
@@ -192,6 +206,66 @@ func (h *SMBDiscoveryHandler) BrowseShare(c *gin.Context) {
 // @Failure 400 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
 // @Router /api/v1/smb/discover [get]
+// ListIdentities returns the safe (no-secrets) identities loaded from the environment.
+// @Summary List SMB identities
+// @Description Returns the configured SMB identities (labels only, NEVER secrets)
+// @Tags SMB
+// @Produce json
+// @Success 200 {array} ListIdentityInfo
+// @Router /api/v1/smb/identities [get]
+func (h *SMBDiscoveryHandler) ListIdentities(c *gin.Context) {
+	idents := services.LoadSMBIdentitiesFromEnv()
+	out := make([]ListIdentityInfo, 0, len(idents))
+	for _, id := range idents {
+		out = append(out, ListIdentityInfo{
+			Index:    id.Index,
+			Kind:     id.Kind,
+			Username: id.Username,
+			Label:    id.Label(),
+		})
+	}
+	h.logger.Debug("Listed SMB identities", zap.Int("count", len(out)))
+	c.JSON(http.StatusOK, out)
+}
+
+// ProbeHost probes a host using the identity-based probe (guest first, then each
+// configured identity), returning the binding identity and real shares.
+// @Summary Probe SMB host with identity-based auth
+// @Description Probes a host (guest first, then each identity) and returns the binding identity + real shares
+// @Tags SMB
+// @Accept json
+// @Produce json
+// @Param request body ProbeHostRequest true "Probe request"
+// @Success 200 {object} services.SMBProbeResult
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /api/v1/smb/probe [post]
+func (h *SMBDiscoveryHandler) ProbeHost(c *gin.Context) {
+	var req ProbeHostRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Error("Invalid probe request", zap.Error(err))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request: " + err.Error()})
+		return
+	}
+
+	idents := services.LoadSMBIdentitiesFromEnv()
+	h.logger.Info("Probing SMB host with identities",
+		zap.String("host", req.Host),
+		zap.Int("identity_count", len(idents)))
+
+	result, err := h.service.ProbeHostWithIdentities(c.Request.Context(), req.Host, idents)
+	if err != nil {
+		h.logger.Error("Failed to probe SMB host", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":  "Failed to probe host: " + err.Error(),
+			"result": result,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
 func (h *SMBDiscoveryHandler) DiscoverSharesGET(c *gin.Context) {
 	host := c.Query("host")
 	username := c.Query("username")
