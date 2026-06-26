@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Icon
@@ -16,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -23,6 +23,16 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+
+/**
+ * Branded-neutral placeholder scrim (§11.4.162) used by the loading/error
+ * fallbacks. Translucent dark verticalgradient: lets the parent's brand
+ * gradient tint through while keeping the centered glyph legible, instead of a
+ * bare gray placeholder bar.
+ */
+private val NeutralPlaceholderScrim: Brush = Brush.verticalGradient(
+    listOf(Color.Black.copy(alpha = 0.25f), Color.Black.copy(alpha = 0.55f))
+)
 
 /**
  * Cover image composable that always uses the backend-provided URL.
@@ -60,21 +70,21 @@ fun CoverImage(
         modifier = modifier,
         contentScale = contentScale,
         loading = {
+            // Branded-neutral placeholder fill (§11.4.162) — a translucent dark
+            // scrim that lets the parent's brand gradient tint through, with the
+            // image glyph centered. NOT a bare gray bar / opaque gray pill.
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(NeutralPlaceholderScrim),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier.background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(50)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Image,
-                        contentDescription = "Loading cover image",
-                        tint = Color.White.copy(alpha = 0.8f),
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.Image,
+                    contentDescription = "Loading cover image",
+                    tint = Color.White.copy(alpha = 0.85f),
+                    modifier = Modifier.padding(12.dp)
+                )
             }
         },
         error = {
@@ -82,21 +92,21 @@ fun CoverImage(
                 // Trigger recomposition with fallback URL on next frame
                 useFallback = true
             }
+            // Same branded-neutral scrim as the loading state so a missing /
+            // failed cover reads as an intentional placeholder (§11.4.162), never
+            // a bare gray placeholder bar.
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(NeutralPlaceholderScrim),
                 contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier.background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(50)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Image,
-                        contentDescription = "Cover image unavailable",
-                        tint = Color.White.copy(alpha = 0.9f),
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.Image,
+                    contentDescription = "Cover image unavailable",
+                    tint = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier.padding(12.dp)
+                )
             }
         }
     )

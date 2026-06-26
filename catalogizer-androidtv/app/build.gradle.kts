@@ -13,6 +13,7 @@ plugins {
     id("kotlin-parcelize")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("jacoco")
+    id("io.github.takahirom.roborazzi")
 }
 
 android {
@@ -75,6 +76,9 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        // REQUIRED by Roborazzi — Robolectric must inflate real resources to render
+        // pixels; without this the screenshot renders blank/throws (cited research).
+        unitTests.isIncludeAndroidResources = true
         unitTests.all {
             it.useJUnit()
             it.jvmArgs("-Xmx4096m", "-XX:MaxMetaspaceSize=1024m", "-Djava.security.manager=allow")
@@ -220,6 +224,15 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.11.1")
     testImplementation("androidx.test:core:1.5.0")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    // §11.4.107/.158/.159 host-side visual-proof harness (renders Compose-for-TV → PNG,
+    // no device). compose-bom platform pins ui-test-* to the SAME Compose 1.6.8 the app
+    // compiles against (cited research: mismatched Compose → NoSuchMethodError on tv-foundation).
+    testImplementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("androidx.compose.ui:ui-test-manifest")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.13.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.13.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-junit-rule:1.13.0")
 
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")

@@ -33,6 +33,7 @@ import androidx.tv.material3.*
 import com.catalogizer.androidtv.DependencyContainer
 import com.catalogizer.androidtv.data.models.MediaItem
 import com.catalogizer.androidtv.ui.components.CoverImage
+import com.catalogizer.androidtv.ui.components.HeroPoster
 import com.catalogizer.androidtv.ui.components.HistoryDialog
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -254,20 +255,17 @@ fun MediaDetailScreen(
                             .height(if (isCompact) 280.dp else 400.dp),
                         contentAlignment = Alignment.TopCenter
                     ) {
-                        if (coverUrl != null) {
-                            CoverImage(
-                                url = coverUrl,
-                                contentDescription = item.title,
-                                modifier = Modifier.fillMaxWidth(),
-                                contentScale = ContentScale.FillWidth
-                            )
-                        } else {
-                            Box(
-                                Modifier.fillMaxSize().background(
-                                    Brush.verticalGradient(listOf(Color(0xFF1A237E), Color(0xFF0A0A0A)))
-                                )
-                            )
-                        }
+                        // Bounded + branded hero (§11.4.162 / §11.4.170). HeroPoster
+                        // fills this 280/400 dp Box with ContentScale.Crop when a
+                        // cover is present, and renders the branded navy-gradient +
+                        // logo + title fallback when the cover is missing or fails —
+                        // never the old unbounded FillWidth gray placeholder bar.
+                        HeroPoster(
+                            coverUrl = coverUrl,
+                            title = item.title,
+                            mediaType = item.mediaType,
+                            modifier = Modifier.fillMaxSize()
+                        )
                         // Gradient overlay for text readability
                         Box(
                             Modifier.fillMaxSize().background(
