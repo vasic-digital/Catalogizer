@@ -180,4 +180,22 @@ class SettingsViewModel(
     fun clearError() {
         _error.value = null
     }
+
+    /** Trigger a test crash via Crashlytics to verify the crash pipeline. */
+    fun triggerTestCrash() {
+        // Crashlytics captures exactly this: an unhandled RuntimeException
+        // wrapping the intentional-crash context so the stack trace is
+        // clearly identifiable in the Firebase console.
+        throw RuntimeException(
+            "CRASHLYTICS_TEST_CRASH — triggered from Settings > Test Crash. " +
+            "This is an intentional crash to verify Firebase Crashlytics is working."
+        )
+    }
+
+    /** Enable or disable Crashlytics automatic crash reporting. */
+    fun toggleCrashlytics(enabled: Boolean) {
+        com.google.firebase.crashlytics.FirebaseCrashlytics.getInstance()
+            .setCrashlyticsCollectionEnabled(enabled)
+        android.util.Log.i("SettingsViewModel", "Crashlytics collection: $enabled")
+    }
 }

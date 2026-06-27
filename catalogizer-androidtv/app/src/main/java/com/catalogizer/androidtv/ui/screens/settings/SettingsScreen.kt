@@ -401,6 +401,47 @@ fun SettingsScreen(
                     }
                 }
 
+                // ── Developer — Firebase Crashlytics ─────────────────────────────
+                item {
+                    var crashlyticsEnabled by remember { mutableStateOf(false) }
+                    SettingsSection(title = "Developer") {
+                        // Crashlytics toggle
+                        ToggleRow(
+                            label = "Crash Reporting",
+                            description = if (crashlyticsEnabled) "Crashes will be reported to Firebase Crashlytics." else "Enable to help diagnose issues by reporting crash data.",
+                            checked = crashlyticsEnabled,
+                            onCheckedChange = {
+                                crashlyticsEnabled = it
+                                settingsViewModel.toggleCrashlytics(it)
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Test Crash button
+                        var crashFocused by remember { mutableStateOf(false) }
+                        Button(
+                            onClick = {
+                                settingsViewModel.triggerTestCrash()
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onFocusChanged { crashFocused = it.isFocused }
+                                .then(
+                                    if (crashFocused) Modifier.border(
+                                        BorderStroke(2.dp, Color(0xFFFF5252)),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) else Modifier
+                                ),
+                            colors = ButtonDefaults.colors(
+                                containerColor = Color(0xFFD32F2F)
+                            )
+                        ) {
+                            Text("Test Crash (verify Crashlytics)", color = TextPrimary)
+                        }
+                    }
+                }
+
                 // ── Account ──────────────────────────────────────────────────────
                 item {
                     SettingsSection(title = "Account") {
