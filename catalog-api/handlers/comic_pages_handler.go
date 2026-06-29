@@ -151,14 +151,6 @@ func isCBR(path string) bool {
 //     io.ReaderAt. Bounded to disk rather than RAM (§12.6); the temp file is
 //     removed on cleanup (§11.4.14).
 func (h *ComicPagesHandler) openComicArchive(ctx context.Context, sf *repository.StreamableFile) (*zip.Reader, func(), error) {
-	// __RED_PROBE__ (§11.4.115) — pre-fix behaviour: open the stored path as a
-	// bare local file. Fails for storage-root-relative (SMB/FTP/WebDAV) paths.
-	if rcOld, errOld := zip.OpenReader(sf.Path); errOld == nil {
-		return &rcOld.Reader, func() { _ = rcOld.Close() }, nil
-	} else {
-		return nil, nil, fmt.Errorf("open comic archive: %w", errOld)
-	}
-
 	root, err := h.getStorageRootForFile(ctx, sf.FileID)
 	if err != nil {
 		return nil, nil, err
