@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -648,6 +650,61 @@ func (h *MediaEntityHandler) buildProxyHTTPClient(timeout time.Duration) *http.C
 	return &http.Client{Timeout: timeout}
 }
 
+// Title-cleaning patterns, compiled once at package load for efficiency.
+// They turn a noisy catalog filename into a TMDB-search-friendly query.
+var (
+	// leadingSeqNumRe strips a leading "NNN <sep>" catalog sequence prefix,
+	// e.g. "001 - ", "32 - ", "003 - ", "01. ", "07) ". A separator char is
+	// REQUIRED so real titles that legitimately start with a number
+	// ("21 Jump Street", "1984", "300") are left untouched.
+	leadingSeqNumRe = regexp.MustCompile(`^\s*\d{1,4}\s*[-._)\]]\s*`)
+	// balancedParensRe / balancedBracketsRe remove release/scene tags fully
+	// enclosed in () or [], e.g. "(2003)", "(Digital-Empire)", "[x264]",
+	// "[Canada, DCC 24K Gold GZS-1045]".
+	balancedParensRe   = regexp.MustCompile(`\([^)]*\)`)
+	balancedBracketsRe = regexp.MustCompile(`\[[^\]]*\]`)
+	// danglingParenRe / danglingBracketRe strip an unbalanced trailing tag with
+	// no closing char, e.g. "...(WebP by Doc MaKS" or "...(Minutemen-Faessla".
+	danglingParenRe   = regexp.MustCompile(`\([^)]*$`)
+	danglingBracketRe = regexp.MustCompile(`\[[^\]]*$`)
+	// dashSeparatorRe collapses " - " word separators to a single space —
+	// TMDB matches "Captain America The First Avenger" better than the
+	// "Captain America - The First Avenger" filename form. A hyphen WITHOUT
+	// surrounding spaces ("Spider-Man") is deliberately not matched.
+	dashSeparatorRe = regexp.MustCompile(`\s+-\s+`)
+	// multiSpaceRe collapses any run of whitespace left behind into one space.
+	multiSpaceRe = regexp.MustCompile(`\s+`)
+)
+
+// cleanTitleForSearch normalizes a catalog media title into a TMDB-search-
+// friendly query. It strips the catalog's "NNN - " sequence-number prefixes,
+// release/scene tags in () and [] (including an unbalanced dangling tag), and
+// collapses " - " separators that TMDB matches worse than plain spaces.
+//
+// It is conservative by design — it never strips a leading number that is part
+// of a real title (a separator char is required after the sequence number) and
+// it falls back to the raw title whenever cleaning would yield an empty query,
+// so the caller never searches TMDB for "".
+//
+// The cleaned value is used ONLY to build the search query; the stored title and
+// metadata still come from the TMDB response or the original entity. The dropped
+// in-title year (e.g. "(2003)") is intentional — year is passed as a separate
+// search parameter and must not be lost from it.
+func cleanTitleForSearch(raw string) string {
+	cleaned := leadingSeqNumRe.ReplaceAllString(raw, "")
+	cleaned = balancedParensRe.ReplaceAllString(cleaned, " ")
+	cleaned = balancedBracketsRe.ReplaceAllString(cleaned, " ")
+	cleaned = danglingParenRe.ReplaceAllString(cleaned, " ")
+	cleaned = danglingBracketRe.ReplaceAllString(cleaned, " ")
+	cleaned = dashSeparatorRe.ReplaceAllString(cleaned, " ")
+	cleaned = multiSpaceRe.ReplaceAllString(cleaned, " ")
+	cleaned = strings.TrimSpace(cleaned)
+	if cleaned == "" {
+		return raw
+	}
+	return cleaned
+}
+
 // fetchTMDBMetadata searches TMDB for a movie/TV show and returns poster + metadata.
 // Retries without year if the initial year-qualified search returns no results,
 // matching the aggregation_service.go enrichment path. Falls back to LLM on failure.
@@ -675,9 +732,15 @@ func (h *MediaEntityHandler) fetchTMDBMetadata(ctx context.Context, title string
 		yearParam = 0
 	}
 
+	// Clean catalog filename noise (sequence prefixes, release/scene tags,
+	// " - " separators) out of the SEARCH QUERY only — stored title/metadata
+	// still come from the TMDB response or the original entity. Done once and
+	// reused for both the with-year and without-year (retry) queries below.
+	searchTitle := cleanTitleForSearch(title)
+
 	// Build base search URL with year
 	baseURL := fmt.Sprintf("https://api.themoviedb.org/3/search/%s?api_key=%s&query=%s",
-		searchType, apiKey, url.QueryEscape(title))
+		searchType, apiKey, url.QueryEscape(searchTitle))
 	searchURL := baseURL
 	if yearParam > 0 {
 		if searchType == "movie" {
@@ -867,15 +930,22 @@ func (h *MediaEntityHandler) markEnrichmentAttempted(ctx context.Context, itemID
 // without a directory_analyses row from enrichment.
 //
 // Ordering: TMDB-matchable types (media_type_id IN (1,2) — movie, tv_show)
-// are returned FIRST, then everything else, each by id. Only ~1369 of the
-// catalog's 27750 items are movie/tv_show; the rest are music albums, comics,
-// episodes, seasons and software that TMDB (a movie/TV database) can never
-// match. Without this ORDER BY, enrichment processed items in arbitrary id
-// order and burned thousands of batches marking unmatchable items
-// `enrichment_attempted` before reaching the movies — so movie cover art
-// loaded last. The CASE expression + GROUP BY (mi.id, mi.media_type_id) are
-// portable across SQLite (dev) and PostgreSQL (prod); media_type_id is
-// functionally dependent on the primary key mi.id, so adding it to GROUP BY
+// are returned FIRST, then everything else. Only ~1369 of the catalog's 27750
+// items are movie/tv_show; the rest are music albums, comics, episodes, seasons
+// and software that TMDB (a movie/TV database) can never match. Without this
+// ORDER BY, enrichment processed items in arbitrary id order and burned
+// thousands of batches marking unmatchable items `enrichment_attempted` before
+// reaching the movies — so movie cover art loaded last.
+//
+// WITHIN each tier, items are ordered by first_detected DESCENDING (newest
+// first), with mi.id as the final deterministic tiebreak. The visible
+// "Recently Added Movies" shelf surfaces the highest-first_detected movies, so
+// recency-first ordering populates that shelf quickly; the previous tiebreak
+// (mi.id ascending) covered the OLDEST-detected movies first and left the
+// visible newest-movie shelf for last (operator symptom). The CASE expression
+// + GROUP BY (mi.id, mi.media_type_id, mi.first_detected) are portable across
+// SQLite (dev) and PostgreSQL (prod); media_type_id and first_detected are both
+// functionally dependent on the primary key mi.id, so adding them to GROUP BY
 // does not change the result cardinality.
 func (h *MediaEntityHandler) selectEntitiesNeedingEnrichment(ctx context.Context, limit int) ([]entityDir, error) {
 	rows, err := h.db.QueryContext(ctx,
@@ -884,8 +954,8 @@ func (h *MediaEntityHandler) selectEntitiesNeedingEnrichment(ctx context.Context
 		 LEFT JOIN directory_analyses da ON da.media_item_id = mi.id
 		 LEFT JOIN external_metadata em ON em.media_item_id = mi.id
 		 WHERE em.id IS NULL
-		 GROUP BY mi.id, mi.media_type_id
-		 ORDER BY (CASE WHEN mi.media_type_id IN (1, 2) THEN 0 ELSE 1 END), mi.id
+		 GROUP BY mi.id, mi.media_type_id, mi.first_detected
+		 ORDER BY (CASE WHEN mi.media_type_id IN (1, 2) THEN 0 ELSE 1 END), mi.first_detected DESC, mi.id
 		 LIMIT ?`, limit)
 	if err != nil {
 		return nil, err

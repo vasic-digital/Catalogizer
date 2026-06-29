@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"catalogizer/config"
 	"catalogizer/database"
@@ -583,4 +584,178 @@ func TestMediaEntityHandler_EnrichPrioritizesTMDBMatchableTypesFirst(t *testing.
 		minNonMatchable = pos[comicID]
 	}
 	assert.Less(t, maxMatchable, minNonMatchable, "all TMDB-matchable types must precede all non-matchable types")
+}
+
+// TestMediaEntityHandler_EnrichOrdersMatchableByRecency proves that WITHIN the
+// TMDB-matchable tier, enrichment selects the MOST-RECENTLY-detected items
+// first (ORDER BY first_detected DESC), so the app's "Recently Added Movies"
+// shelf — which surfaces the highest first_detected items — gets its covers
+// quickly. The pre-fix ORDER BY tie-broke the matchable tier by mi.id ASCENDING,
+// so the OLDEST-detected movies (lowest ids, in the production reality where id
+// and first_detected both grow with insertion order) were covered FIRST and the
+// visible newest-movie shelf was covered LAST (operator symptom).
+//
+// The seed deliberately makes id-order and recency-order DISAGREE in the
+// production-realistic direction: the OLDER movie is inserted FIRST (lower id,
+// older first_detected) and the NEWER movie LAST (higher id, newer
+// first_detected). Under the broken id-ascending order the older movie comes
+// back first (newer NOT first → RED); under the recency-descending order the
+// newer movie comes back first (→ GREEN). A non-matchable album with the NEWEST
+// first_detected of all is also seeded to prove the type tier still dominates
+// recency — a newer album must NOT jump ahead of the older movies.
+func TestMediaEntityHandler_EnrichOrdersMatchableByRecency(t *testing.T) {
+	db, cleanup := setupEntityTestDB(t)
+	defer cleanup()
+
+	handler, itemRepo := setupEntityHandler(t, db)
+	handler.db = db
+	ctx := context.Background()
+
+	// Real seeded type IDs — looked up, never hardcoded guesses.
+	_, movieType, err := itemRepo.GetMediaTypeByName(ctx, "movie")
+	require.NoError(t, err)
+	_, albumType, err := itemRepo.GetMediaTypeByName(ctx, "music_album")
+	require.NoError(t, err)
+
+	base := time.Now()
+
+	// OLDER movie first → LOWER id, OLDER first_detected. Create preserves an
+	// explicit non-zero FirstDetected (it only defaults to now() when zero), so
+	// these timestamps land verbatim in media_items.first_detected.
+	olderMovieID, err := itemRepo.Create(ctx, &models.MediaItem{
+		MediaTypeID:   movieType,
+		Title:         "Old Detected Movie",
+		Status:        "detected",
+		FirstDetected: base.Add(-48 * time.Hour),
+	})
+	require.NoError(t, err)
+
+	// NEWER movie last → HIGHER id, NEWER first_detected. id-order (older first)
+	// and recency-order (newer first) now disagree.
+	newerMovieID, err := itemRepo.Create(ctx, &models.MediaItem{
+		MediaTypeID:   movieType,
+		Title:         "Newly Detected Movie",
+		Status:        "detected",
+		FirstDetected: base.Add(-24 * time.Hour),
+	})
+	require.NoError(t, err)
+
+	// A non-matchable album with the NEWEST first_detected of all — proves the
+	// matchable-type tier dominates recency (it must STILL come after both
+	// movies despite being the most recently detected).
+	albumID, err := itemRepo.Create(ctx, &models.MediaItem{
+		MediaTypeID:   albumType,
+		Title:         "Brand New Album [FLAC]",
+		Status:        "detected",
+		FirstDetected: base,
+	})
+	require.NoError(t, err)
+
+	require.Greater(t, newerMovieID, olderMovieID,
+		"seed precondition: newer movie must have the higher id so id-order and recency-order disagree")
+
+	entities, err := handler.selectEntitiesNeedingEnrichment(ctx, 50)
+	require.NoError(t, err)
+	require.Len(t, entities, 3, "all three un-enriched items must be selected")
+
+	pos := make(map[int64]int, len(entities))
+	for i, e := range entities {
+		pos[e.ID] = i
+	}
+	for _, id := range []int64{olderMovieID, newerMovieID, albumID} {
+		_, ok := pos[id]
+		require.True(t, ok, "seeded item %d must appear in the selection", id)
+	}
+
+	// Recency within the matchable tier: the NEWER movie must be enriched before
+	// the OLDER movie. Pre-fix (ORDER BY ... mi.id) returns the older movie first
+	// (lower id) → this assertion FAILS (RED). Post-fix (ORDER BY ...
+	// first_detected DESC, mi.id) returns the newer movie first → PASSES (GREEN).
+	assert.Less(t, pos[newerMovieID], pos[olderMovieID],
+		"the more-recently-detected movie must be enriched before the older movie (newest-first shelf populates quickly)")
+
+	// Type tier still dominates recency: both movies precede the (newest) album.
+	assert.Less(t, pos[newerMovieID], pos[albumID],
+		"a TMDB-matchable movie must precede the non-matchable album even though the album is newer")
+	assert.Less(t, pos[olderMovieID], pos[albumID],
+		"a TMDB-matchable movie must precede the non-matchable album even though the album is newer")
+}
+
+// TestCleanTitleForSearch proves that catalog filename noise (sequence-number
+// prefixes, release/scene tags in () and [], and " - " separators) is stripped
+// from the raw title before it becomes a TMDB search query, while real titles —
+// including ones that legitimately start with a number or contain a hyphen —
+// are left intact. The forensic anchor: the raw title
+// "001 - Captain America - The First Avenger" returned ZERO TMDB matches live,
+// while the cleaned "Captain America The First Avenger" returned the correct film.
+func TestCleanTitleForSearch(t *testing.T) {
+	cases := []struct {
+		name string
+		raw  string
+		want string
+	}{
+		{
+			name: "sequence prefix and internal dash separators",
+			raw:  "001 - Captain America - The First Avenger",
+			want: "Captain America The First Avenger",
+		},
+		{
+			name: "short sequence prefix",
+			raw:  "003 - Iron Man",
+			want: "Iron Man",
+		},
+		{
+			name: "two-digit prefix, balanced tags and a dangling unbalanced paren",
+			raw:  "32 - Asterix and the Class Act (2003) (Digital-Empire) (WebP by Doc MaKS",
+			want: "Asterix and the Class Act",
+		},
+		{
+			name: "bracketed release tag with internal comma and hyphen",
+			raw:  "Waiting For The Sun [Canada, DCC 24K Gold GZS-1045]",
+			want: "Waiting For The Sun",
+		},
+		{
+			name: "mid-title number kept, balanced tags and dangling paren stripped",
+			raw:  "Spawn Kills Everyone! 01 (2016) (3 covers) (digital) (Minutemen-Faessla",
+			want: "Spawn Kills Everyone! 01",
+		},
+		{
+			name: "clean title is not over-cleaned",
+			raw:  "Phone Booth",
+			want: "Phone Booth",
+		},
+		{
+			name: "leading number that is part of the real title is preserved",
+			raw:  "21 Jump Street",
+			want: "21 Jump Street",
+		},
+		{
+			name: "bare numeric title is preserved",
+			raw:  "1984",
+			want: "1984",
+		},
+		{
+			name: "hyphenated word without surrounding spaces is preserved",
+			raw:  "Spider-Man",
+			want: "Spider-Man",
+		},
+		{
+			name: "empty input returns empty",
+			raw:  "",
+			want: "",
+		},
+		{
+			name: "all-noise input falls back to raw rather than empty query",
+			raw:  "(2020)",
+			want: "(2020)",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := cleanTitleForSearch(tc.raw)
+			assert.Equal(t, tc.want, got,
+				"cleanTitleForSearch(%q) = %q, want %q", tc.raw, got, tc.want)
+		})
+	}
 }
