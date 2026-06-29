@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
@@ -77,23 +78,40 @@ internal fun childSectionTitle(parentMediaType: String?): String = when (parentM
  * callback — without disturbing the existing IMAGE / VIDEO routing. Keep
  * [LeafActionKind.VIDEO] the exhaustive default so any unknown leaf type still
  * gets the existing (working) video route rather than a dead end.
+ *
+ * COMIC was added per the above plan: a `comic` media_type (or a comic-archive
+ * path) opens the dedicated [ComicReaderScreen] instead of the player.
  */
-internal enum class LeafActionKind { VIDEO, IMAGE }
+internal enum class LeafActionKind { VIDEO, IMAGE, COMIC }
 
 /** Image file extensions catalog-api recognises as still images. */
 private val IMAGE_EXTENSIONS =
     setOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "heif", "tif", "tiff")
 
 /**
+ * Comic-archive extensions the catalog-api comic-pages endpoint can page through.
+ * Only `.cbz` is fully served today; `.cbr` is dispatched here too so the reader
+ * can show the honest "not yet supported" message (HTTP 501) rather than the
+ * video player silently failing on a RAR archive (§11.4.1).
+ */
+private val COMIC_EXTENSIONS = setOf("cbz", "cbr")
+
+/**
  * Classify a leaf entity for primary-action dispatch. The authoritative signal
- * is the backend `media_type` (catalog-api `MediaTypeImage = "image"`); when
- * that is absent/unknown a file-extension fallback on the entity path keeps an
- * image out of the video player. Pure + internal for unit testing without a
- * device (§11.4.6 — classification proven, not guessed).
+ * is the backend `media_type` (catalog-api seeds `comic` + `image`); when that is
+ * absent/unknown a file-extension fallback on the entity path keeps a comic out
+ * of the video player and an image out of the player. Pure + internal for unit
+ * testing without a device (§11.4.6 — classification proven, not guessed).
+ *
+ * Order is load-bearing: the `comic` media_type wins first, then `image`, then
+ * the extension fallbacks — so the pre-existing IMAGE / VIDEO behaviour is
+ * unchanged and only the new COMIC case is added.
  */
 internal fun leafActionKindFor(mediaType: String?, path: String? = null): LeafActionKind {
+    if (mediaType == "comic") return LeafActionKind.COMIC
     if (mediaType == "image") return LeafActionKind.IMAGE
     val ext = path?.substringAfterLast('.', "")?.lowercase()
+    if (!ext.isNullOrEmpty() && ext in COMIC_EXTENSIONS) return LeafActionKind.COMIC
     if (!ext.isNullOrEmpty() && ext in IMAGE_EXTENSIONS) return LeafActionKind.IMAGE
     return LeafActionKind.VIDEO
 }
@@ -120,7 +138,12 @@ fun MediaDetailScreen(
     // the player callback so existing callers/tests stay backwards-compatible
     // (an image still routes somewhere rather than crashing) until the host
     // wires the dedicated image-viewer route.
-    onNavigateToImageViewer: (Long) -> Unit = onNavigateToPlayer
+    onNavigateToImageViewer: (Long) -> Unit = onNavigateToPlayer,
+    // Comic leaf types (media_type == "comic" / .cbz / .cbr) dispatch here to the
+    // dedicated comic reader. Defaults to the player callback for back-compat so
+    // existing callers/tests keep compiling and a comic still routes somewhere
+    // rather than crashing until the host wires the comic-reader route.
+    onNavigateToComicReader: (Long) -> Unit = onNavigateToPlayer
 ) {
     val container = DependencyContainer.getInstance(androidx.compose.ui.platform.LocalContext.current)
     var mediaItem by remember { mutableStateOf<MediaItem?>(null) }
@@ -268,11 +291,13 @@ fun MediaDetailScreen(
                 // Container entities (show / season / album) are not directly
                 // playable — they expose their children instead of Play Now.
                 val isContainer = isContainerType(item.mediaType)
-                // Leaf-action dispatch: an "image" entity (or an image-extension
-                // path) opens the image viewer; everything else keeps the video
+                // Leaf-action dispatch: an "image" entity (or image-extension
+                // path) opens the image viewer; a "comic" entity (or .cbz/.cbr
+                // path) opens the comic reader; everything else keeps the video
                 // player route. Container entities never use this.
                 val leafKind = leafActionKindFor(item.mediaType, item.smbPath)
                 val isImageLeaf = leafKind == LeafActionKind.IMAGE
+                val isComicLeaf = leafKind == LeafActionKind.COMIC
                 val coverUrl = item.thumbnailUrl?.let { url ->
                     when {
                         url.startsWith("/") ->
@@ -438,6 +463,7 @@ fun MediaDetailScreen(
                                     onClick = {
                                         when (leafKind) {
                                             LeafActionKind.IMAGE -> onNavigateToImageViewer(mediaId)
+                                            LeafActionKind.COMIC -> onNavigateToComicReader(mediaId)
                                             LeafActionKind.VIDEO -> onNavigateToPlayer(mediaId)
                                         }
                                     },
@@ -463,12 +489,24 @@ fun MediaDetailScreen(
                                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                                         ) {
                                             M3Icon(
-                                                if (isImageLeaf) Icons.Default.Image else Icons.Default.PlayArrow,
-                                                if (isImageLeaf) "View" else "Play",
+                                                when {
+                                                    isComicLeaf -> Icons.Default.MenuBook
+                                                    isImageLeaf -> Icons.Default.Image
+                                                    else -> Icons.Default.PlayArrow
+                                                },
+                                                when {
+                                                    isComicLeaf -> "Read"
+                                                    isImageLeaf -> "View"
+                                                    else -> "Play"
+                                                },
                                                 Modifier.size(28.dp)
                                             )
                                             Text(
-                                                if (isImageLeaf) "View Image" else "Play Now",
+                                                when {
+                                                    isComicLeaf -> "Read Comic"
+                                                    isImageLeaf -> "View Image"
+                                                    else -> "Play Now"
+                                                },
                                                 style = MaterialTheme.typography.titleMedium,
                                                 fontWeight = FontWeight.SemiBold
                                             )

@@ -47,6 +47,15 @@ interface CatalogizerApi {
     @GET("api/v1/entities/{id}/stream")
     suspend fun getEntityStream(@Path("id") id: Long): Response<kotlinx.serialization.json.JsonObject>
 
+    // Comic reader: lists the page entries of a .cbz archive as
+    // {"total_pages": N, "pages": [{"index": 0, "name": "001.png"}, ...]}.
+    // Returns HTTP 501 for .cbr archives (no RAR decoder wired yet) — the
+    // ComicReaderScreen surfaces that honestly rather than blanking. Individual
+    // page bytes stream from GET .../pages/{n} (0-based), loaded by Coil with the
+    // same Bearer auth as /stream.
+    @GET("api/v1/entities/{id}/pages")
+    suspend fun getComicPages(@Path("id") id: Long): Response<kotlinx.serialization.json.JsonObject>
+
     // Playback session tracking — records one row in the
     // backend playback_sessions table for every reproduction
     // session and surfaces the rolled-up per-user progress

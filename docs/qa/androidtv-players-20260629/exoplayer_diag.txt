@@ -1,0 +1,1 @@
+06-29 15:29:29.923  3149  9237 I chatty  : uid=1046(mediacodec) omx@1.0-service identical 1 line
