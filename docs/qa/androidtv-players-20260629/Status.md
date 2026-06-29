@@ -11,9 +11,31 @@
 
 | # | Item | Status |
 |---|------|--------|
-| 1 | **Video player crashes 100% on launch** — release blocker | ROOT-CAUSED, fix in progress |
+| 1 | **Video player crashed 100% on launch** — release blocker | ✅ FIXED + PROVEN on-device |
 
-## CRITICAL FINDING — video playback is completely broken (§11.4.107 caught it)
+## RESOLUTION — video playback FIXED and re-validated on-device (§11.4.107 PASS)
+
+The crash below was fixed (ExoTvPlayerActivity → ComponentActivity, commit 995b5853) and
+**re-validated on the real MIBOX4 with the rebuilt APK**. Captured §11.4.107 proof:
+- **Crash gone:** "Play Now" now opens `ExoTvPlayerActivity` (foreground, app alive) — where
+  it crashed 100% to the launcher before.
+- **Real movie loaded:** player overlay shows duration **2:04:12** (the real movie length,
+  parsed from the mkv container) — `11_playing_position.png`.
+- **Genuine playback (§11.4.107(2) frame-advance oracle):** position advanced
+  **00:03 → 04:36 → 04:38** across captures, seek bar progressed — the movie is decoding +
+  advancing. (`09_player_frame1.png` 00:03 → `11_playing_position.png` 04:36.)
+- **PAUSE control works (§UI/UX):** CENTER toggled the player play↔pause — button icon
+  flipped ‖ (playing) → ▶ (paused), position froze at 04:38 (`12_after_pause.png`). Full
+  transport overlay present: prev / −10s / play-pause / +10s / next / seek bar / settings.
+- **Honest §11.4.107 boundary:** the video *pixels* are not screencap-able — the player draws
+  to a SurfaceView/hardware overlay that `screencap` returns black (the surface is NOT
+  FLAG_SECURE; this is the hardware-overlay capture limitation the constitution acknowledges:
+  "true photon FPS at the sink has no clean software oracle"). The player's own
+  position-counter + duration + play/pause state ARE the capturable playback oracle, and they
+  prove genuine advancing playback. Pixel-level visual confirmation is `operator_attended`
+  per §11.4.52 (the operator sees the movie on the panel; the software proves it advances).
+
+### Original CRITICAL FINDING (now fixed) — video playback was completely broken
 
 ### What was tested (real user journey, §11.4.143)
 Launched app → pixel-oracle login (§11.4.117) → home screen rendered with **real TMDB

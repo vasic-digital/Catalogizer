@@ -201,15 +201,45 @@ first)</h2>
 <tbody>
 <tr>
 <td>1</td>
-<td><strong>Video player crashes 100% on launch</strong> — release
+<td><strong>Video player crashed 100% on launch</strong> — release
 blocker</td>
-<td>ROOT-CAUSED, fix in progress</td>
+<td>✅ FIXED + PROVEN on-device</td>
 </tr>
 </tbody>
 </table>
 <h2
-id="critical-finding-video-playback-is-completely-broken-11.4.107-caught-it">CRITICAL
-FINDING — video playback is completely broken (§11.4.107 caught it)</h2>
+id="resolution-video-playback-fixed-and-re-validated-on-device-11.4.107-pass">RESOLUTION
+— video playback FIXED and re-validated on-device (§11.4.107 PASS)</h2>
+<p>The crash below was fixed (ExoTvPlayerActivity → ComponentActivity,
+commit 995b5853) and <strong>re-validated on the real MIBOX4 with the
+rebuilt APK</strong>. Captured §11.4.107 proof: - <strong>Crash
+gone:</strong> “Play Now” now opens <code>ExoTvPlayerActivity</code>
+(foreground, app alive) — where it crashed 100% to the launcher before.
+- <strong>Real movie loaded:</strong> player overlay shows duration
+<strong>2:04:12</strong> (the real movie length, parsed from the mkv
+container) — <code>11_playing_position.png</code>. - <strong>Genuine
+playback (§11.4.107(2) frame-advance oracle):</strong> position advanced
+<strong>00:03 → 04:36 → 04:38</strong> across captures, seek bar
+progressed — the movie is decoding + advancing.
+(<code>09_player_frame1.png</code> 00:03 →
+<code>11_playing_position.png</code> 04:36.) - <strong>PAUSE control
+works (§UI/UX):</strong> CENTER toggled the player play↔︎pause — button
+icon flipped ‖ (playing) → ▶ (paused), position froze at 04:38
+(<code>12_after_pause.png</code>). Full transport overlay present: prev
+/ −10s / play-pause / +10s / next / seek bar / settings. -
+<strong>Honest §11.4.107 boundary:</strong> the video <em>pixels</em>
+are not screencap-able — the player draws to a SurfaceView/hardware
+overlay that <code>screencap</code> returns black (the surface is NOT
+FLAG_SECURE; this is the hardware-overlay capture limitation the
+constitution acknowledges: “true photon FPS at the sink has no clean
+software oracle”). The player’s own position-counter + duration +
+play/pause state ARE the capturable playback oracle, and they prove
+genuine advancing playback. Pixel-level visual confirmation is
+<code>operator_attended</code> per §11.4.52 (the operator sees the movie
+on the panel; the software proves it advances).</p>
+<h3
+id="original-critical-finding-now-fixed-video-playback-was-completely-broken">Original
+CRITICAL FINDING (now fixed) — video playback was completely broken</h3>
 <h3 id="what-was-tested-real-user-journey-11.4.143">What was tested
 (real user journey, §11.4.143)</h3>
 <p>Launched app → pixel-oracle login (§11.4.117) → home screen rendered
