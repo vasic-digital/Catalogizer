@@ -387,3 +387,6 @@ catalog-api-*-bin
 
 # QA evidence images — keep text evidence, link to PNGs in qa-results (§11.4.30)
 docs/qa/**/*.png
+
+# HelixQA runtime session logs (§11.4.30 — runtime derivative, not reference)
+docs/reports/qa-sessions/**/helixqa/*.log
