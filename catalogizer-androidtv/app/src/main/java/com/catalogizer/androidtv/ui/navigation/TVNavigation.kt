@@ -15,6 +15,7 @@ import com.catalogizer.androidtv.ui.screens.search.SearchScreen
 import com.catalogizer.androidtv.ui.screens.settings.SettingsScreen
 import com.catalogizer.androidtv.ui.screens.viewer.ImageViewerScreen
 import com.catalogizer.androidtv.ui.screens.viewer.ComicReaderScreen
+import com.catalogizer.androidtv.ui.screens.viewer.BookReaderScreen
 import com.catalogizer.androidtv.ui.screens.search.SearchViewModel
 import com.catalogizer.androidtv.ui.screens.category.CategoryBrowseScreen
 import com.catalogizer.androidtv.ui.player.ExoTvPlayerActivity
@@ -40,6 +41,9 @@ sealed class TVScreen(val route: String) {
     }
     object ComicReader : TVScreen("comic_reader/{mediaId}") {
         fun createRoute(mediaId: Long) = "comic_reader/$mediaId"
+    }
+    object BookReader : TVScreen("book_reader/{mediaId}") {
+        fun createRoute(mediaId: Long) = "book_reader/$mediaId"
     }
     object Settings : TVScreen("settings")
     object Category : TVScreen("category/{mediaType}") {
@@ -139,6 +143,11 @@ fun TVNavigation(
                 // dedicated comic reader instead of the video player.
                 onNavigateToComicReader = { id ->
                     navController.navigate(TVScreen.ComicReader.createRoute(id))
+                },
+                // Book leaf entities (.pdf, media_type "book") open the dedicated
+                // PDF book reader instead of the video player.
+                onNavigateToBookReader = { id ->
+                    navController.navigate(TVScreen.BookReader.createRoute(id))
                 }
             )
         }
@@ -156,6 +165,16 @@ fun TVNavigation(
         composable(TVScreen.ComicReader.route) { backStackEntry ->
             val mediaId = backStackEntry.arguments?.getString("mediaId")?.toLongOrNull() ?: 0L
             ComicReaderScreen(
+                mediaId = mediaId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(TVScreen.BookReader.route) { backStackEntry ->
+            val mediaId = backStackEntry.arguments?.getString("mediaId")?.toLongOrNull() ?: 0L
+            BookReaderScreen(
                 mediaId = mediaId,
                 onNavigateBack = {
                     navController.popBackStack()

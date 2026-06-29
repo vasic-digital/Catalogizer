@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook as AutoMirroredMenuBook
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -81,8 +82,12 @@ internal fun childSectionTitle(parentMediaType: String?): String = when (parentM
  *
  * COMIC was added per the above plan: a `comic` media_type (or a comic-archive
  * path) opens the dedicated [ComicReaderScreen] instead of the player.
+ *
+ * BOOK was added the same way: a `book` media_type (or a `.pdf` path) opens the
+ * dedicated [BookReaderScreen] (catalog-api renders each PDF page server-side via
+ * MuPDF) instead of the player.
  */
-internal enum class LeafActionKind { VIDEO, IMAGE, COMIC }
+internal enum class LeafActionKind { VIDEO, IMAGE, COMIC, BOOK }
 
 /** Image file extensions catalog-api recognises as still images. */
 private val IMAGE_EXTENSIONS =
@@ -97,22 +102,33 @@ private val IMAGE_EXTENSIONS =
 private val COMIC_EXTENSIONS = setOf("cbz", "cbr")
 
 /**
+ * Book extensions the catalog-api pdf-pages endpoint can render through. Only
+ * `.pdf` is served today — `pdf_pages_handler.go` rejects any non-`.pdf` file with
+ * HTTP 400 — so the set is intentionally `.pdf`-only (§11.4.6 — matched to the
+ * backend, not guessed). Other formats keep the existing VIDEO fallback.
+ */
+private val BOOK_EXTENSIONS = setOf("pdf")
+
+/**
  * Classify a leaf entity for primary-action dispatch. The authoritative signal
- * is the backend `media_type` (catalog-api seeds `comic` + `image`); when that is
- * absent/unknown a file-extension fallback on the entity path keeps a comic out
- * of the video player and an image out of the player. Pure + internal for unit
- * testing without a device (§11.4.6 — classification proven, not guessed).
+ * is the backend `media_type` (catalog-api seeds `comic` + `image` + `book`); when
+ * that is absent/unknown a file-extension fallback on the entity path keeps a
+ * comic / book out of the video player and an image out of the player. Pure +
+ * internal for unit testing without a device (§11.4.6 — classification proven,
+ * not guessed).
  *
  * Order is load-bearing: the `comic` media_type wins first, then `image`, then
- * the extension fallbacks — so the pre-existing IMAGE / VIDEO behaviour is
- * unchanged and only the new COMIC case is added.
+ * `book`, then the extension fallbacks (comic, image, book) — so the pre-existing
+ * IMAGE / VIDEO / COMIC behaviour is unchanged and only the new BOOK case is added.
  */
 internal fun leafActionKindFor(mediaType: String?, path: String? = null): LeafActionKind {
     if (mediaType == "comic") return LeafActionKind.COMIC
     if (mediaType == "image") return LeafActionKind.IMAGE
+    if (mediaType == "book") return LeafActionKind.BOOK
     val ext = path?.substringAfterLast('.', "")?.lowercase()
     if (!ext.isNullOrEmpty() && ext in COMIC_EXTENSIONS) return LeafActionKind.COMIC
     if (!ext.isNullOrEmpty() && ext in IMAGE_EXTENSIONS) return LeafActionKind.IMAGE
+    if (!ext.isNullOrEmpty() && ext in BOOK_EXTENSIONS) return LeafActionKind.BOOK
     return LeafActionKind.VIDEO
 }
 
@@ -143,7 +159,12 @@ fun MediaDetailScreen(
     // dedicated comic reader. Defaults to the player callback for back-compat so
     // existing callers/tests keep compiling and a comic still routes somewhere
     // rather than crashing until the host wires the comic-reader route.
-    onNavigateToComicReader: (Long) -> Unit = onNavigateToPlayer
+    onNavigateToComicReader: (Long) -> Unit = onNavigateToPlayer,
+    // Book leaf types (media_type == "book" / .pdf) dispatch here to the dedicated
+    // PDF book reader. Defaults to the player callback for back-compat so existing
+    // callers/tests keep compiling and a book still routes somewhere rather than
+    // crashing until the host wires the book-reader route.
+    onNavigateToBookReader: (Long) -> Unit = onNavigateToPlayer
 ) {
     val container = DependencyContainer.getInstance(androidx.compose.ui.platform.LocalContext.current)
     var mediaItem by remember { mutableStateOf<MediaItem?>(null) }
@@ -298,6 +319,7 @@ fun MediaDetailScreen(
                 val leafKind = leafActionKindFor(item.mediaType, item.smbPath)
                 val isImageLeaf = leafKind == LeafActionKind.IMAGE
                 val isComicLeaf = leafKind == LeafActionKind.COMIC
+                val isBookLeaf = leafKind == LeafActionKind.BOOK
                 val coverUrl = item.thumbnailUrl?.let { url ->
                     when {
                         url.startsWith("/") ->
@@ -464,6 +486,7 @@ fun MediaDetailScreen(
                                         when (leafKind) {
                                             LeafActionKind.IMAGE -> onNavigateToImageViewer(mediaId)
                                             LeafActionKind.COMIC -> onNavigateToComicReader(mediaId)
+                                            LeafActionKind.BOOK -> onNavigateToBookReader(mediaId)
                                             LeafActionKind.VIDEO -> onNavigateToPlayer(mediaId)
                                         }
                                     },
