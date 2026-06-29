@@ -1,0 +1,4 @@
+catalog-api/catalog-api-local filter=lfs diff=lfs merge=lfs -text
+catalog-api/catalog-api-* filter=lfs diff=lfs merge=lfs -text
+catalog-api/catalogizer filter=lfs diff=lfs merge=lfs -text
+catalog-api/catalogizer-* filter=lfs diff=lfs merge=lfs -text
