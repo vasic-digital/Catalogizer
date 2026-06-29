@@ -865,6 +865,18 @@ func (h *MediaEntityHandler) markEnrichmentAttempted(ctx context.Context, itemID
 // DirPath is empty and fall through to the TMDB/LLM path, which only needs
 // the item's title/year. An inner JOIN here silently excluded every item
 // without a directory_analyses row from enrichment.
+//
+// Ordering: TMDB-matchable types (media_type_id IN (1,2) — movie, tv_show)
+// are returned FIRST, then everything else, each by id. Only ~1369 of the
+// catalog's 27750 items are movie/tv_show; the rest are music albums, comics,
+// episodes, seasons and software that TMDB (a movie/TV database) can never
+// match. Without this ORDER BY, enrichment processed items in arbitrary id
+// order and burned thousands of batches marking unmatchable items
+// `enrichment_attempted` before reaching the movies — so movie cover art
+// loaded last. The CASE expression + GROUP BY (mi.id, mi.media_type_id) are
+// portable across SQLite (dev) and PostgreSQL (prod); media_type_id is
+// functionally dependent on the primary key mi.id, so adding it to GROUP BY
+// does not change the result cardinality.
 func (h *MediaEntityHandler) selectEntitiesNeedingEnrichment(ctx context.Context, limit int) ([]entityDir, error) {
 	rows, err := h.db.QueryContext(ctx,
 		`SELECT mi.id, COALESCE(MIN(da.directory_path), '')
@@ -872,7 +884,8 @@ func (h *MediaEntityHandler) selectEntitiesNeedingEnrichment(ctx context.Context
 		 LEFT JOIN directory_analyses da ON da.media_item_id = mi.id
 		 LEFT JOIN external_metadata em ON em.media_item_id = mi.id
 		 WHERE em.id IS NULL
-		 GROUP BY mi.id
+		 GROUP BY mi.id, mi.media_type_id
+		 ORDER BY (CASE WHEN mi.media_type_id IN (1, 2) THEN 0 ELSE 1 END), mi.id
 		 LIMIT ?`, limit)
 	if err != nil {
 		return nil, err

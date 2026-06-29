@@ -498,3 +498,89 @@ func TestMediaEntityHandler_EnrichmentAttemptedSentinelHasNoCover(t *testing.T) 
 		 WHERE media_item_id = ? AND cover_url IS NOT NULL AND cover_url != ''`, item).Scan(&usableCovers))
 	assert.Equal(t, 0, usableCovers, "sentinel row must carry a NULL/empty cover_url so GetCoverURL falls through to the placeholder")
 }
+
+// TestMediaEntityHandler_EnrichPrioritizesTMDBMatchableTypesFirst proves the
+// enrichment selection ORDERs TMDB-matchable types (movie, tv_show) BEFORE all
+// other types so real posters appear on the movie/TV shelves quickly. The
+// catalog holds 27750 items but only ~1369 are TMDB-matchable (movie=1192 +
+// tv_show=177); the rest are music albums, comics, episodes, seasons and
+// software that TMDB — a movie/TV database — can never match. Without a
+// prioritising ORDER BY, enrichment processed items in arbitrary id order,
+// burning thousands of batches marking unmatchable music/comics
+// `enrichment_attempted` BEFORE ever reaching the movies (operator symptom:
+// movie cover art never loads). The CASE-based ORDER BY puts
+// media_type_id IN (1,2) first, then by id, so matchable movies/TV are enriched
+// first.
+func TestMediaEntityHandler_EnrichPrioritizesTMDBMatchableTypesFirst(t *testing.T) {
+	db, cleanup := setupEntityTestDB(t)
+	defer cleanup()
+
+	handler, itemRepo := setupEntityHandler(t, db)
+	handler.db = db
+	ctx := context.Background()
+
+	// Real seeded type IDs — looked up, never hardcoded guesses.
+	_, movieType, err := itemRepo.GetMediaTypeByName(ctx, "movie")
+	require.NoError(t, err)
+	_, tvType, err := itemRepo.GetMediaTypeByName(ctx, "tv_show")
+	require.NoError(t, err)
+	_, albumType, err := itemRepo.GetMediaTypeByName(ctx, "music_album")
+	require.NoError(t, err)
+	_, comicType, err := itemRepo.GetMediaTypeByName(ctx, "comic")
+	require.NoError(t, err)
+
+	// The ORDER BY uses the literal IN (1, 2). That literal is correct only
+	// because the canonical media_types seed assigns movie=1 and tv_show=2
+	// (the production reality the operator complained about). Guard the
+	// coupling: if the seed order ever changes, fail loudly here rather than
+	// silently mis-ordering enrichment.
+	require.Equal(t, int64(1), movieType, "movie media_type_id must be 1 (ORDER BY IN (1,2) coupling)")
+	require.Equal(t, int64(2), tvType, "tv_show media_type_id must be 2 (ORDER BY IN (1,2) coupling)")
+
+	// Seed NON-matchable types FIRST (lower media_items ids) and matchable
+	// types LAST (higher ids), so the pre-fix id-ascending order puts the
+	// movie/tv AFTER the album/comic — the exact arrangement the ORDER BY must
+	// reverse.
+	albumID, err := itemRepo.Create(ctx, &models.MediaItem{MediaTypeID: albumType, Title: "Some Album [FLAC]", Status: "detected"})
+	require.NoError(t, err)
+	comicID, err := itemRepo.Create(ctx, &models.MediaItem{MediaTypeID: comicType, Title: "Some Comic #1", Status: "detected"})
+	require.NoError(t, err)
+	movieID, err := itemRepo.Create(ctx, &models.MediaItem{MediaTypeID: movieType, Title: "The Matrix", Status: "detected"})
+	require.NoError(t, err)
+	tvID, err := itemRepo.Create(ctx, &models.MediaItem{MediaTypeID: tvType, Title: "Breaking Bad", Status: "detected"})
+	require.NoError(t, err)
+
+	// A limit large enough to return all four.
+	entities, err := handler.selectEntitiesNeedingEnrichment(ctx, 50)
+	require.NoError(t, err)
+	require.Len(t, entities, 4, "all four un-enriched items must be selected")
+
+	// Map each seeded item id to its position in the returned slice.
+	pos := make(map[int64]int, len(entities))
+	for i, e := range entities {
+		pos[e.ID] = i
+	}
+	for _, id := range []int64{albumID, comicID, movieID, tvID} {
+		_, ok := pos[id]
+		require.True(t, ok, "seeded item %d must appear in the selection", id)
+	}
+
+	// The matchable movie + tv_show MUST both appear before the non-matchable
+	// album + comic. Without the ORDER BY they come back in id order
+	// (album, comic, movie, tv) — movie/tv LAST — which fails these assertions.
+	assert.Less(t, pos[movieID], pos[albumID], "movie must be enriched before music_album")
+	assert.Less(t, pos[movieID], pos[comicID], "movie must be enriched before comic")
+	assert.Less(t, pos[tvID], pos[albumID], "tv_show must be enriched before music_album")
+	assert.Less(t, pos[tvID], pos[comicID], "tv_show must be enriched before comic")
+
+	// Stronger form: every matchable item precedes every non-matchable item.
+	maxMatchable := pos[movieID]
+	if pos[tvID] > maxMatchable {
+		maxMatchable = pos[tvID]
+	}
+	minNonMatchable := pos[albumID]
+	if pos[comicID] < minNonMatchable {
+		minNonMatchable = pos[comicID]
+	}
+	assert.Less(t, maxMatchable, minNonMatchable, "all TMDB-matchable types must precede all non-matchable types")
+}
