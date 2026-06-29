@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="containerized-distributed-build-proof-first-increment">§11.4.173
+Containerized + Distributed Build — PROOF (first increment)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-30T00:20:00Z <strong>Mandate:</strong> §11.4.173 — every build
+runs inside a container distributed to the remote build host
+(thinker.local), artifact brought back; never on the bare host.</p>
+<h2
+id="verdict-proven-catalog-api-built-in-a-container-on-thinker.local-artifact-verified-back-here.">Verdict:
+PROVEN — catalog-api built in a container ON thinker.local, artifact
+verified back here.</h2>
+<p><code>scripts/build_in_container.sh</code> synced catalog-api + its
+15 replaced submodules to thinker.local, built catalog-api INSIDE a
+golang container there (CGO on for go-sqlite3 + the docx CGO dep), and
+copied the binary BACK to deploy/artifacts/. Rock-solid proof (§11.4.6,
+no bluff):</p>
+<pre><code>=== §11.4.173 BUILD PROOF ===
+  build_host:   thinker.local (in container docker.io/library/golang:1.25-bookworm)
+  remote_md5:   4c6a267de143ea71fd1edb6cc35d108b  (size 124934288)
+  local_md5:    4c6a267de143ea71fd1edb6cc35d108b
+  md5_match:    YES
+  artifact:     ELF 64-bit LSB executable, x86-64, GNU/Linux, dynamically linked, not stripped
+  [build] OK — built on thinker.local in a container, artifact verified on this host.</code></pre>
+<p>The brought-back <code>deploy/artifacts/catalog-api-container</code>
+is a valid Linux x86-64 ELF Go binary; its md5 EXACTLY matches the
+artifact produced inside the remote container (identity preserved on
+copy-back).</p>
+<h2 id="root-cause-fixed-en-route-11.4.102">Root cause fixed en route
+(§11.4.102)</h2>
+<p>First run FAILED on the alpine image:
+<code>undefined reference to __snprintf_chk</code> — a CGO dependency
+(docx.c) references glibc <code>_FORTIFY_SOURCE</code> symbols that musl
+libc (alpine) lacks. Fix: build in <code>golang:1.25-bookworm</code>
+(debian/glibc, gcc preinstalled). The alpine-vs-glibc CGO lesson is now
+encoded in the script + this doc.</p>
+<h2 id="honest-scope-11.4.6-first-increment-only">Honest scope (§11.4.6)
+— first increment only</h2>
+<p>PROVEN: the catalog-api (Go) build is containerized + distributed +
+artifact-returned. REMAINING: - Android (Gradle) builds — the APK builds
+still run on the host (the §11.4.173 operational gap). - Desktop + web
+builds — containerize similarly. - A first-class build primitive in the
+digital.vasic.containers submodule (§11.4.74 extend) instead of the
+ad-hoc podman wrapper this script uses.</p>
+</body>
+</html>

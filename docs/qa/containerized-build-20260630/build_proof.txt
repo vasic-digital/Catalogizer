@@ -1,0 +1,8 @@
+[build] building catalog-api in container on thinker.local ...
+=== §11.4.173 BUILD PROOF ===
+  build_host:   thinker.local (in container docker.io/library/golang:1.25-bookworm)
+  remote_md5:   4c6a267de143ea71fd1edb6cc35d108b  (size 124934288)
+  local_md5:    4c6a267de143ea71fd1edb6cc35d108b
+  md5_match:    YES
+  artifact:     ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=80c309ed91f3f2a38c114c7dd03f713ba11ae3f1, for GNU/Linux 3.2.0, with debug_info, not stripped
+[build] OK — built on thinker.local in a container, artifact verified on this host.
