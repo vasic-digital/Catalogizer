@@ -1,3 +1,4 @@
+import com.google.firebase.perf.plugin.FirebasePerfExtension
 import java.util.Properties
 
 // Disable JDK image transform at project level to avoid jlink issues
@@ -56,6 +57,15 @@ android {
             isDebuggable = true
             buildConfigField("String", "API_BASE_URL", "\"\"")
             buildConfigField("String", "WS_URL", "\"\"")
+            // Disable Firebase Performance bytecode instrumentation for debug only.
+            // The perf plugin wraps HttpURLConnection/OkHttp, which forces
+            // com.google.firebase.perf.config.RemoteConfigManager to class-init in the
+            // pure-JVM unit-test environment (no Android/Firebase context) and throws
+            // ExceptionInInitializerError -> NoClassDefFoundError, poisoning the JVM fork.
+            // Release perf monitoring is unaffected (instrumentation stays on for release).
+            configure<FirebasePerfExtension> {
+                setInstrumentationEnabled(false)
+            }
         }
         release {
             isMinifyEnabled = true
