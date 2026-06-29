@@ -1,6 +1,6 @@
 # HelixQA Android TV Autonomous QA Report
 
-**Generated:** 2026-06-29T20:33:54+03:00
+**Generated:** 2026-06-29T23:11:59+03:00
 **API URL:** http://localhost:28080
 **Duration:** 30 minutes
 **Devices:** 1
@@ -38,7 +38,7 @@
 ## Evidence
 
 ### Device 1 (192.168.0.214:5555)
-- Screenshots: 94
+- Screenshots: 92
 - Videos: 1
 - Crashes detected: 0
 
