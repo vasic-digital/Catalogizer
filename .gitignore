@@ -353,6 +353,7 @@ docs/issues/
 # this guard prevents it from being re-added.)
 catalog-api/api-server
 catalog-api/api-server.*
+catalog-api/catalog-api-local
 catalog-api/dist/
 catalog-api/build/
 *.exe
