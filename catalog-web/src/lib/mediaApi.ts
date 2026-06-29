@@ -94,7 +94,7 @@ export const mediaApi = {
     link.href = url
 
     // Extract filename from path or use title
-    const filename = media.directory_path.split('/').pop() || `${media.title}.${media.media_type}`
+    const filename = media.directory_path?.split('/').pop() || `${media.title}.${media.media_type}`
     link.setAttribute('download', filename)
 
     document.body.appendChild(link)

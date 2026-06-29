@@ -273,7 +273,7 @@ export const SubtitleManager: React.FC = () => {
 
             {mediaSearchResults && mediaSearchResults.items.length > 0 && (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {mediaSearchResults.items.map((media) => (
+                {mediaSearchResults.items.map((media: MediaItem) => (
                   <div
                     key={media.id}
                     onClick={() => handleMediaSelect(media)}

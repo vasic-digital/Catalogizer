@@ -228,6 +228,25 @@ func (s *UniversalScanner) scanWorker(workerID int) {
 
 // processScanJob processes a single scan job
 func (s *UniversalScanner) processScanJob(job ScanJob, workerID int) {
+	// Panic recovery: log the panic, update status to failed, increment error_count, and publish event
+	defer func() {
+		if r := recover(); r != nil {
+			s.logger.Error("Panic recovered in processScanJob",
+				zap.String("job_id", job.ID),
+				zap.String("storage_root", job.StorageRoot.Name),
+				zap.Any("panic", r))
+			status := &ScanStatus{
+				JobID:           job.ID,
+				StorageRootName: job.StorageRoot.Name,
+				Protocol:        job.StorageRoot.Protocol,
+				StartTime:       time.Now(),
+				Status:          "failed",
+				ErrorCount:      1,
+			}
+			s.publishScanEvent(job, status, fmt.Errorf("panic: %v", r))
+		}
+	}()
+
 	// Acquire semaphore to limit concurrent scans
 	if err := s.scanSem.Acquire(job.Context); err != nil {
 		s.logger.Debug("Scan job cancelled before acquiring semaphore",
@@ -309,7 +328,9 @@ func (s *UniversalScanner) processScanJob(job ScanJob, workerID int) {
 		s.logger.Error("Failed to connect to filesystem",
 			zap.String("protocol", job.StorageRoot.Protocol),
 			zap.String("job_id", job.ID),
+			zap.String("storage_root", job.StorageRoot.Name),
 			zap.Error(err))
+		status.incrementCounters(0, 0, 0, 0, 1)
 		status.updateStatus("failed")
 		s.publishScanEvent(job, status, err)
 		return

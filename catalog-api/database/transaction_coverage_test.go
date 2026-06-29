@@ -233,16 +233,24 @@ func TestTxLockOrder_GetAndSort(t *testing.T) {
 }
 
 func TestWithTransactionTimeout_Cancels(t *testing.T) {
-	ctx, cancel := WithTransactionTimeout(context.Background(), 10*time.Millisecond)
+	ctx, cancel := WithTransactionTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
-	time.Sleep(20 * time.Millisecond)
+
+	// Poll with a generous deadline to tolerate scheduling jitter on loaded systems.
+	require.Eventually(t, func() bool {
+		return ctx.Err() != nil
+	}, 500*time.Millisecond, 10*time.Millisecond, "expected context to be cancelled after timeout")
 	require.Error(t, ctx.Err())
 }
 
 func TestWithQueryTimeout_Cancels(t *testing.T) {
-	ctx, cancel := WithQueryTimeout(context.Background(), 10*time.Millisecond)
+	ctx, cancel := WithQueryTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
-	time.Sleep(20 * time.Millisecond)
+
+	// Poll with a generous deadline to tolerate scheduling jitter on loaded systems.
+	require.Eventually(t, func() bool {
+		return ctx.Err() != nil
+	}, 500*time.Millisecond, 10*time.Millisecond, "expected context to be cancelled after timeout")
 	require.Error(t, ctx.Err())
 }
 

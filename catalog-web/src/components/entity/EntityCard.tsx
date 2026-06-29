@@ -48,7 +48,7 @@ export function EntityCard({
               </div>
               {entity.genre && entity.genre.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {entity.genre.slice(0, 3).map((g) => (
+                  {entity.genre.slice(0, 3).map((g: string) => (
                     <span
                       key={g}
                       className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-400"

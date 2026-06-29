@@ -126,7 +126,7 @@ const IdentityForm: React.FC<IdentityFormProps> = ({ initial, onDone }) => {
 
   const updateMutation = useMutation({
     mutationFn: (body: Partial<IdentityRequest>) =>
-      identitiesApi.update(initial!.id, body),
+      identitiesApi.update(initial?.id ?? 0, body),
     onSuccess: () => {
       toast.success('Identity updated')
       queryClient.invalidateQueries({ queryKey: ['identities'] })

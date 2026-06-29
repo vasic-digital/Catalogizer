@@ -21,12 +21,10 @@ import {
 } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { Input } from '@/components/ui/Input'
 import { identitiesApi } from '@/lib/identitiesApi'
 import type { DiscoveredShare } from '@/types/identity'
 import {
   Network,
-  Scan,
   Server,
   FolderOpen,
   Wifi,
@@ -36,61 +34,8 @@ import {
   Globe,
   HardDrive,
   Monitor,
-  ShieldCheck,
-  ShieldOff,
-  ShieldAlert,
-  HelpCircle,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-
-/* ------------------------------------------------------------------ */
-/*  Auth-status badge                                                  */
-/* ------------------------------------------------------------------ */
-
-const AuthBadge: React.FC<{
-  anonymousOk: boolean
-  identityName: string | null
-  status: string
-}> = ({ anonymousOk, identityName, status }) => {
-  if (status === 'ok' && anonymousOk) {
-    return (
-      <Badge variant="secondary" className="flex items-center gap-1">
-        <ShieldOff className="h-3 w-3" />
-        Anonymous
-      </Badge>
-    )
-  }
-  if (status === 'ok' && identityName) {
-    return (
-      <Badge variant="default" className="flex items-center gap-1">
-        <ShieldCheck className="h-3 w-3" />
-        {identityName}
-      </Badge>
-    )
-  }
-  if (status === 'unauthenticated') {
-    return (
-      <Badge variant="outline" className="flex items-center gap-1 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700">
-        <ShieldAlert className="h-3 w-3" />
-        Unauthenticated
-      </Badge>
-    )
-  }
-  if (status === 'failed') {
-    return (
-      <Badge variant="destructive" className="flex items-center gap-1">
-        <ShieldAlert className="h-3 w-3" />
-        Failed
-      </Badge>
-    )
-  }
-  return (
-    <Badge variant="outline" className="flex items-center gap-1">
-      <HelpCircle className="h-3 w-3" />
-      {status}
-    </Badge>
-  )
-}
 
 /* ------------------------------------------------------------------ */
 /*  Protocol icon helper                                               */
@@ -348,7 +293,10 @@ export const DiscoveredShares: React.FC = () => {
           shares: [],
         })
       }
-      map.get(key)!.shares.push(share)
+      const entry = map.get(key)
+      if (entry) {
+        entry.shares.push(share)
+      }
     }
     return Array.from(map.values())
   }, [filteredShares, hosts])

@@ -23,7 +23,7 @@ export const MediaFilters: React.FC<MediaFiltersProps> = ({
   onReset,
   className = ''
 }) => {
-  const updateFilter = (key: keyof MediaSearchRequest, value: string | number | undefined) => {
+  const updateFilter = (key: keyof MediaSearchRequest, value: string | number | string[] | undefined) => {
     onFiltersChange({
       ...filters,
       [key]: value,
@@ -111,17 +111,17 @@ export const MediaFilters: React.FC<MediaFiltersProps> = ({
             {QUALITY_LEVELS.map((quality) => (
               <Button
                 key={quality}
-                variant={filters.quality === quality ? 'default' : 'outline'}
+                variant={filters.quality?.includes(quality) ? 'default' : 'outline'}
                 size="sm"
                 onClick={() =>
-                  filters.quality === quality
+                  filters.quality?.includes(quality)
                     ? clearFilter('quality')
-                    : updateFilter('quality', quality)
+                    : updateFilter('quality', [quality])
                 }
                 className="text-xs"
               >
                 {quality.toUpperCase()}
-                {filters.quality === quality && (
+                {filters.quality?.includes(quality) && (
                   <X className="h-3 w-3 ml-1" />
                 )}
               </Button>

@@ -484,7 +484,7 @@ export const Analytics: React.FC = () => {
                 return (
                   <div key={item.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                     <div className="text-blue-600 dark:text-blue-400">
-                      {getIcon(item.media_type)}
+                      {getIcon(item.media_type ?? '')}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
@@ -499,7 +499,7 @@ export const Analytics: React.FC = () => {
                       </div>
                       <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
                         <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs dark:bg-blue-900 dark:text-blue-200">
-                          {item.media_type.replace('_', ' ')}
+                          {item.media_type?.replace('_', ' ')}
                         </span>
                         {item.quality && (
                           <span>{item.quality.toUpperCase()}</span>
@@ -510,7 +510,7 @@ export const Analytics: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {new Date(item.created_at).toLocaleDateString()}
+                      {item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Unknown'}
                     </div>
                   </div>
                 )

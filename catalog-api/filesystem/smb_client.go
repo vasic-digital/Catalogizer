@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"time"
 
 	"github.com/hirochachacha/go-smb2"
 )
@@ -36,9 +37,9 @@ func NewSmbClient(config *SmbConfig) *SmbClient {
 
 // Connect establishes the SMB connection
 func (c *SmbClient) Connect(ctx context.Context) error {
-	// Establish TCP connection
+	// Establish TCP connection with timeout
 	addr := net.JoinHostPort(c.config.Host, fmt.Sprintf("%d", c.config.Port))
-	conn, err := net.Dial("tcp", addr)
+	conn, err := net.DialTimeout("tcp", addr, 10*time.Second)
 	if err != nil {
 		return fmt.Errorf("failed to connect to SMB server: %w", err)
 	}

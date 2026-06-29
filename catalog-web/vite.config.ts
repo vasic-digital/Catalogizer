@@ -33,7 +33,7 @@ export default defineConfig({
     deps: {
       optimizer: {
         web: {
-          include: ['@vitejs/plugin-react'],
+          include: ['@vitejs/plugin-react', '@vasic-digital/ui-components'],
         },
       },
     },

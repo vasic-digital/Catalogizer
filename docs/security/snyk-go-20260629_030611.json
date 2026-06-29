@@ -1,0 +1,5 @@
+{
+  "ok": false,
+  "error": "packageURL validation failed: CustomError: version and packageURL version do not match. want undefined have: undefined",
+  "path": "/run/media/milosvasic/DATA4TB/Projects/catalogizer/catalog-api"
+}

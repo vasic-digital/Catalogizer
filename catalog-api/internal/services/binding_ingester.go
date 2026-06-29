@@ -130,9 +130,9 @@ func (bi *BindingIngester) insertStorageRootOnce(ctx context.Context, name, host
 	_, insertErr := bi.db.InsertReturningID(ctx,
 		`INSERT INTO storage_roots
 			(name, protocol, host, path, domain, options, enabled, max_depth, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, 1, 10, ?, ?)`,
+		 VALUES (?, ?, ?, ?, ?, ?, ?, 10, ?, ?)`,
 		name, "smb", host, sharePath,
-		"WORKGROUP", optionsStr, now, now,
+		"WORKGROUP", optionsStr, true, now, now,
 	)
 	if insertErr != nil {
 		return false, fmt.Errorf("ingester: insert storage_root %s: %w", name, insertErr)

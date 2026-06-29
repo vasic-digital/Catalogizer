@@ -826,125 +826,171 @@ func (h *MediaEntityHandler) tryLLMFallback(ctx context.Context, title string, y
 }
 
 // EnrichAllEntities handles POST /api/v1/entities/enrich — batch metadata enrichment.
-// Scans all entities for local cover art and stores results.
+// Returns 202 Accepted immediately and processes enrichment asynchronously in the
+// background. The caller can poll GET /api/v1/entities/stats to observe progress.
+// Query params:
+//   - limit: max entities to process (default 50, max 200)
 func (h *MediaEntityHandler) EnrichAllEntities(c *gin.Context) {
-	ctx := c.Request.Context()
-
 	if h.db == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database not available"})
 		return
 	}
 
-	// Get all entities that don't have external metadata yet
-	rows, err := h.db.QueryContext(ctx,
-		`SELECT mi.id, MIN(da.directory_path)
-		 FROM media_items mi
-		 JOIN directory_analyses da ON da.media_item_id = mi.id
+	// Parse optional limit (default 50, max 200) to keep response time reasonable
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+
+	// Fast existence check so we can return 200 when there is no work.
+	var pending int
+	_ = h.db.QueryRowContext(c.Request.Context(),
+		`SELECT COUNT(*) FROM media_items mi
 		 LEFT JOIN external_metadata em ON em.media_item_id = mi.id
 		 WHERE em.id IS NULL
-		 GROUP BY mi.id
-		 LIMIT 500`)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("query: %v", err)})
+		 LIMIT 1`).Scan(&pending)
+	if pending == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"message":  "No entities need enrichment",
+			"queued":   0,
+			"accepted": false,
+		})
 		return
 	}
-	defer rows.Close()
 
-	type entityDir struct {
-		ID      int64
-		DirPath string
-	}
-	var entities []entityDir
-	for rows.Next() {
-		var ed entityDir
-		if err := rows.Scan(&ed.ID, &ed.DirPath); err != nil {
-			continue
+	// Return 200 OK immediately; enrichment is performed in the background.
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "Batch enrichment queued",
+		"queued":        -1,
+		"accepted":      true,
+		"limit_applied": limit,
+	})
+
+	// Spawn background enrichment goroutine
+	h.enrichWg.Add(1)
+	go func(limit int) {
+		defer h.enrichWg.Done()
+		bgCtx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+		defer cancel()
+
+		// Get all entities that don't have external metadata yet
+		rows, err := h.db.QueryContext(bgCtx,
+			`SELECT mi.id, MIN(da.directory_path)
+			 FROM media_items mi
+			 JOIN directory_analyses da ON da.media_item_id = mi.id
+			 LEFT JOIN external_metadata em ON em.media_item_id = mi.id
+			 WHERE em.id IS NULL
+			 GROUP BY mi.id
+			 LIMIT ?`, limit)
+		if err != nil {
+			logging.Warnf("EnrichAllEntities: background query failed: %v", err)
+			return
 		}
-		entities = append(entities, ed)
-	}
+		defer rows.Close()
 
-	enriched := 0
-	tmdbEnriched := 0
-	localEnriched := 0
-	coverNames := []string{"cover.jpg", "folder.jpg", "poster.jpg", "cover.png"}
-
-	for _, ent := range entities {
-		// Try local cover first
-		parentDir := ent.DirPath
-		found := false
-		for _, name := range coverNames {
-			var coverFileID int64
-			err := h.db.QueryRowContext(ctx,
-				`SELECT id FROM files WHERE directory_path LIKE ? LIMIT 1`,
-				parentDir+"/%"+name).Scan(&coverFileID)
-			if err == nil && coverFileID > 0 {
-				coverURL := fmt.Sprintf("/api/v1/download/file/%d", coverFileID)
-				meta := &models.ExternalMetadata{
-					MediaItemID: ent.ID,
-					Provider:    "local_scan",
-					ExternalID:  fmt.Sprintf("local:%d", ent.ID),
-					CoverURL:    &coverURL,
-				}
-				if err := h.extMetaRepo.Upsert(ctx, meta); err != nil {
-					// Log but continue - cover was still found
-				}
-				localEnriched++
-				enriched++
-				found = true
-				break
+		type entityDir struct {
+			ID      int64
+			DirPath string
+		}
+		var entities []entityDir
+		for rows.Next() {
+			var ed entityDir
+			if err := rows.Scan(&ed.ID, &ed.DirPath); err != nil {
+				continue
 			}
+			entities = append(entities, ed)
 		}
 
-		// Try TMDB if no local cover
-		if !found {
-			// Get entity details for TMDB search
-			var title string
-			var year int
-			var mediaTypeID int
-			err := h.db.QueryRowContext(ctx,
-				`SELECT title, COALESCE(year, 0), media_type_id FROM media_items WHERE id = ?`,
-				ent.ID).Scan(&title, &year, &mediaTypeID)
-			if err == nil && title != "" {
-				result := h.fetchTMDBMetadata(ctx, title, year, mediaTypeID)
-				if result != nil && result.posterURL != "" {
+		if len(entities) == 0 {
+			logging.Infof("EnrichAllEntities: no entities need enrichment after fast check indicated work")
+			return
+		}
+
+		enriched := 0
+		tmdbEnriched := 0
+		localEnriched := 0
+		coverNames := []string{"cover.jpg", "folder.jpg", "poster.jpg", "cover.png"}
+
+		for _, ent := range entities {
+			// Check context cancellation before each entity
+			select {
+			case <-bgCtx.Done():
+				logging.Warnf("EnrichAllEntities: background job cancelled after %d entities", enriched)
+				return
+			default:
+			}
+
+			// Try local cover first
+			parentDir := ent.DirPath
+			found := false
+			for _, name := range coverNames {
+				var coverFileID int64
+				err := h.db.QueryRowContext(bgCtx,
+					`SELECT id FROM files WHERE directory_path LIKE ? LIMIT 1`,
+					parentDir+"/%"+name).Scan(&coverFileID)
+				if err == nil && coverFileID > 0 {
+					coverURL := fmt.Sprintf("/api/v1/download/file/%d", coverFileID)
 					meta := &models.ExternalMetadata{
 						MediaItemID: ent.ID,
-						Provider:    "tmdb",
-						ExternalID:  fmt.Sprintf("tmdb:%d", result.tmdbID),
-						CoverURL:    &result.posterURL,
-						Data:        result.overview,
-						Rating:      result.rating,
+						Provider:    "local_scan",
+						ExternalID:  fmt.Sprintf("local:%d", ent.ID),
+						CoverURL:    &coverURL,
 					}
-					if err := h.extMetaRepo.Upsert(ctx, meta); err != nil {
-						// Log but continue - metadata was still fetched
+					if err := h.extMetaRepo.Upsert(bgCtx, meta); err != nil {
+						// Log but continue - cover was still found
 					}
-					// Update entity description
-					if result.overview != "" {
-						_, _ = h.db.ExecContext(ctx,
-							`UPDATE media_items SET description = ? WHERE id = ? AND (description IS NULL OR description = '')`,
-							result.overview, ent.ID)
-					}
-					if result.rating != nil && *result.rating > 0 {
-						_, _ = h.db.ExecContext(ctx,
-							`UPDATE media_items SET rating = ? WHERE id = ? AND (rating IS NULL OR rating = 0)`,
-							*result.rating, ent.ID)
-					}
-					tmdbEnriched++
+					localEnriched++
 					enriched++
-					// Rate limit TMDB API (40 requests per 10 seconds)
-					time.Sleep(250 * time.Millisecond)
+					found = true
+					break
+				}
+			}
+
+			// Try TMDB if no local cover
+			if !found {
+				var title string
+				var year int
+				var mediaTypeID int
+				err := h.db.QueryRowContext(bgCtx,
+					`SELECT title, COALESCE(year, 0), media_type_id FROM media_items WHERE id = ?`,
+					ent.ID).Scan(&title, &year, &mediaTypeID)
+				if err == nil && title != "" {
+					result := h.fetchTMDBMetadata(bgCtx, title, year, mediaTypeID)
+					if result != nil && result.posterURL != "" {
+						meta := &models.ExternalMetadata{
+							MediaItemID: ent.ID,
+							Provider:    "tmdb",
+							ExternalID:  fmt.Sprintf("tmdb:%d", result.tmdbID),
+							CoverURL:    &result.posterURL,
+							Data:        result.overview,
+							Rating:      result.rating,
+						}
+						if err := h.extMetaRepo.Upsert(bgCtx, meta); err != nil {
+							// Log but continue - metadata was still fetched
+						}
+						// Update entity description
+						if result.overview != "" {
+							_, _ = h.db.ExecContext(bgCtx,
+								`UPDATE media_items SET description = ? WHERE id = ? AND (description IS NULL OR description = '')`,
+								result.overview, ent.ID)
+						}
+						if result.rating != nil && *result.rating > 0 {
+							_, _ = h.db.ExecContext(bgCtx,
+								`UPDATE media_items SET rating = ? WHERE id = ? AND (rating IS NULL OR rating = 0)`,
+								*result.rating, ent.ID)
+						}
+						tmdbEnriched++
+						enriched++
+						// Rate limit TMDB API (40 requests per 10 seconds)
+						time.Sleep(250 * time.Millisecond)
+					}
 				}
 			}
 		}
-	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message":       "Batch enrichment complete",
-		"scanned":       len(entities),
-		"enriched":      enriched,
-		"local_covers":  localEnriched,
-		"tmdb_enriched": tmdbEnriched,
-	})
+		logging.Infof("EnrichAllEntities: completed — %d enriched (%d local, %d TMDB) out of %d queued",
+			enriched, localEnriched, tmdbEnriched, len(entities))
+	}(limit)
 }
 
 // UpdateUserMetadata handles PUT /api/v1/entities/:id/user-metadata.

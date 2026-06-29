@@ -376,11 +376,16 @@ func (h *FavoritesHandler) AddFavorite(c *gin.Context) {
 			return
 		}
 		// "item already in favorites" → 409 Conflict, not 500.
-		// Caught by FQA-API-217 (Add second time) where the API
-		// previously returned 500 for the duplicate-add case.
-		if strings.Contains(err.Error(), "already in favorites") ||
-			strings.Contains(err.Error(), "already exists") ||
-			strings.Contains(err.Error(), "duplicate") {
+		// Caught by FQA-API-211 (Add second time) where the API
+		// previously returned 200 for the duplicate-add case.
+		// Also catches DB-level UNIQUE constraint violations from
+		// both SQLite ("UNIQUE constraint failed") and PostgreSQL
+		// ("duplicate key value violates unique constraint").
+		errStr := strings.ToLower(err.Error())
+		if strings.Contains(errStr, "already in favorites") ||
+			strings.Contains(errStr, "already exists") ||
+			strings.Contains(errStr, "duplicate") ||
+			strings.Contains(errStr, "unique constraint") {
 			c.JSON(http.StatusConflict, gin.H{"error": "already in favorites"})
 			return
 		}

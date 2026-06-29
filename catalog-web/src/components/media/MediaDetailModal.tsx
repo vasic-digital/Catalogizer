@@ -3,7 +3,7 @@ import { Dialog, Transition } from '@headlessui/react'
 import { X, Download, Play, Star, Calendar, Film, HardDrive, Clock, Info } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
-import type { MediaItem } from '@/types/media'
+import type { MediaItem, MediaVersion } from '@/types/media'
 
 interface MediaDetailModalProps {
   media: MediaItem | null
@@ -147,7 +147,7 @@ export const MediaDetailModal: React.FC<MediaDetailModalProps> = ({
                       {/* Genres */}
                       {externalMeta?.genres && externalMeta.genres.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-4">
-                          {externalMeta.genres.map((genre, index) => (
+                          {externalMeta.genres.map((genre: string, index: number) => (
                             <span
                               key={index}
                               className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm"
@@ -243,7 +243,7 @@ export const MediaDetailModal: React.FC<MediaDetailModalProps> = ({
                     <div className="mt-8">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Cast</h3>
                       <div className="flex flex-wrap gap-3">
-                        {externalMeta.cast.slice(0, 10).map((actor, index) => (
+                        {externalMeta.cast.slice(0, 10).map((actor: string, index: number) => (
                           <span
                             key={index}
                             className="px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm"
@@ -260,7 +260,7 @@ export const MediaDetailModal: React.FC<MediaDetailModalProps> = ({
                     <div className="mt-8">
                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Available Versions</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {media.versions.map((version) => (
+                        {media.versions.map((version: MediaVersion) => (
                           <Card key={version.id}>
                             <CardContent className="p-4">
                               <div className="flex justify-between items-start">

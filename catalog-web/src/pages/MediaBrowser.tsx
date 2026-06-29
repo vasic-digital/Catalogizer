@@ -46,7 +46,7 @@ export const MediaBrowser: React.FC = () => {
   const debouncedQuery = useDebounce(searchQuery, 300)
 
   useEffect(() => {
-    setFilters(prev => ({
+    setFilters((prev: MediaSearchRequest) => ({
       ...prev,
       query: debouncedQuery || undefined,
       offset: 0,
@@ -125,7 +125,7 @@ export const MediaBrowser: React.FC = () => {
       ? (currentPage + 1) * (filters.limit || 24)
       : Math.max(0, (currentPage - 1) * (filters.limit || 24))
 
-    setFilters(prev => ({ ...prev, offset: newOffset }))
+    setFilters((prev: MediaSearchRequest) => ({ ...prev, offset: newOffset }))
     setNavigationKey(prev => prev + 1) // Force React Query to refetch
   }
 

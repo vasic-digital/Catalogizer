@@ -2,18 +2,24 @@ package handlers
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"catalogizer/database"
 	"catalogizer/models"
+	"catalogizer/repository"
 	"catalogizer/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	_ "github.com/mutecomm/go-sqlcipher"
 )
 
 func setupTestRouter() *gin.Engine {
@@ -299,4 +305,132 @@ func TestAnalyticsEvent_Struct(t *testing.T) {
 	assert.Equal(t, 1, event.UserID)
 	assert.Equal(t, "page_view", event.EventType)
 	assert.False(t, event.Timestamp.IsZero())
+}
+
+// TestFavoritesHandler_AddFavorite_Duplicate_Integration is the
+// regression test for FQA-API-211. It wires the full handler ->
+// service -> repository chain against an in-memory SQLite database
+// and asserts that adding an already-favorited entity returns
+// HTTP 409 Conflict (not 200 OK {"status":"added"}).
+func TestFavoritesHandler_AddFavorite_Duplicate_Integration(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	defer sqlDB.Close()
+	sqlDB.SetMaxOpenConns(1)
+
+	ctx := context.Background()
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
+	if err := db.RunMigrations(ctx); err != nil {
+		t.Fatalf("run migrations: %v", err)
+	}
+
+	// Seed a user (required by FK on favorites.user_id).
+	if _, err := db.ExecContext(ctx, `
+		INSERT OR IGNORE INTO users (id, username, email, password_hash, salt, is_active)
+		VALUES (1, 'testuser', 'test@example.com', '', '', 1)
+	`); err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+
+	// Build the real handler chain.
+	favoritesRepo := repository.NewFavoritesRepository(db)
+	favoritesService := services.NewFavoritesService(favoritesRepo, nil)
+	logger := zap.NewNop()
+	handler := NewFavoritesHandler(favoritesService, logger)
+
+	r := gin.New()
+	r.POST("/favorites", func(c *gin.Context) {
+		c.Set("user_id", 1)
+		handler.AddFavorite(c)
+	})
+
+	// First add: should succeed with 200.
+	body := bytes.NewBufferString(`{"entity_id": 42, "entity_type": "movie"}`)
+	req := httptest.NewRequest(http.MethodPost, "/favorites", body)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code,
+		"first add must succeed; got body: %s", w.Body.String())
+	var resp map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	assert.Equal(t, "added", resp["status"])
+
+	// Second add (same user_id + entity_type + entity_id): must be 409.
+	body = bytes.NewBufferString(`{"entity_id": 42, "entity_type": "movie"}`)
+	req = httptest.NewRequest(http.MethodPost, "/favorites", body)
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusConflict, w.Code,
+		"duplicate add must return 409 Conflict; got body: %s", w.Body.String())
+	var errResp map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &errResp))
+	assert.Contains(t, errResp["error"], "already in favorites")
+}
+
+// TestFavoritesHandler_AddFavorite_Duplicate_RaceViaDBConstraint
+// verifies that even if the pre-insert GetFavorite check is bypassed
+// (e.g., by a race or by direct repository call), the UNIQUE
+// constraint violation from the database is still surfaced as 409.
+func TestFavoritesHandler_AddFavorite_Duplicate_RaceViaDBConstraint(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	defer sqlDB.Close()
+	sqlDB.SetMaxOpenConns(1)
+
+	ctx := context.Background()
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
+	if err := db.RunMigrations(ctx); err != nil {
+		t.Fatalf("run migrations: %v", err)
+	}
+
+	if _, err := db.ExecContext(ctx, `
+		INSERT OR IGNORE INTO users (id, username, email, password_hash, salt, is_active)
+		VALUES (1, 'testuser', 'test@example.com', '', '', 1)
+	`); err != nil {
+		t.Fatalf("seed user: %v", err)
+	}
+
+	favoritesRepo := repository.NewFavoritesRepository(db)
+	favoritesService := services.NewFavoritesService(favoritesRepo, nil)
+	logger := zap.NewNop()
+	handler := NewFavoritesHandler(favoritesService, logger)
+
+	r := gin.New()
+	r.POST("/favorites", func(c *gin.Context) {
+		c.Set("user_id", 1)
+		handler.AddFavorite(c)
+	})
+
+	// Pre-seed the favorite directly in the DB so the handler's
+	// GetFavorite check will find it and return 409.
+	if _, err := db.ExecContext(ctx, `
+		INSERT INTO favorites (user_id, entity_type, entity_id, is_public, created_at)
+		VALUES (1, 'movie', 99, 0, CURRENT_TIMESTAMP)
+	`); err != nil {
+		t.Fatalf("seed favorite: %v", err)
+	}
+
+	body := bytes.NewBufferString(`{"entity_id": 99, "entity_type": "movie"}`)
+	req := httptest.NewRequest(http.MethodPost, "/favorites", body)
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusConflict, w.Code,
+		"pre-seeded duplicate must return 409; got body: %s", w.Body.String())
+	var errResp map[string]interface{}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &errResp))
+	assert.Contains(t, errResp["error"], "already in favorites")
 }

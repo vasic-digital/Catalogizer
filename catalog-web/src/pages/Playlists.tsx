@@ -179,7 +179,7 @@ export const PlaylistsPage: React.FC = () => {
       media_item: {
         id: media.id,
         title: media.title,
-        media_type: media.media_type,
+        media_type: media.media_type ?? '',
         year: media.year,
         cover_image: media.cover_image,
         duration: media.duration,

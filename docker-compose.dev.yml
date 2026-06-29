@@ -14,7 +14,6 @@ services:
       - "25432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./catalog-api/database/migrations:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U catalogizer"]
       interval: 10s
@@ -43,9 +42,10 @@ services:
   # Catalogizer API
   api:
     build:
-      context: ./catalog-api
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: catalog-api/Dockerfile.dev
     container_name: catalogizer-api-dev
+    env_file: .env
     environment:
       # Database configuration
       DATABASE_TYPE: postgres
@@ -77,10 +77,10 @@ services:
       CORS_ENABLED: "true"
       CORS_ORIGINS: "http://localhost:3000,http://localhost:19006"
     ports:
-      - "28080:28080"
+      - "28080:8080"
     volumes:
       - ./catalog-api:/app
-      - ../submodules/assets:/app/../submodules/assets:ro
+      - ./submodules:/submodules:ro
       - api_cache:/go/pkg/mod
     depends_on:
       postgres:

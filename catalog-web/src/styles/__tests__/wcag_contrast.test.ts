@@ -28,6 +28,7 @@ const css = readFileSync(cssPath, 'utf8')
 
 /** Extract a single non-nested `selector { ... }` rule body from the CSS. */
 function ruleBody(selector: string): string {
+  // eslint-disable-next-line security/detect-non-literal-regexp -- selector is a known safe CSS class name, not user input
   const re = new RegExp(`${selector.replace('.', '\\.')}\\s*\\{([^}]*)\\}`)
   const m = css.match(re)
   if (!m) throw new Error(`Could not find rule "${selector}" in index.css`)
@@ -38,6 +39,7 @@ function ruleBody(selector: string): string {
 function cssVar(body: string, name: string): string {
   // `--destructive:` must NOT match `--destructive-foreground:` — the `:`
   // immediately follows the exact name, so the prefix collision is excluded.
+  // eslint-disable-next-line security/detect-non-literal-regexp -- name is a known safe CSS variable name, not user input
   const m = body.match(new RegExp(`--${name}:\\s*([^;]+);`))
   if (!m) throw new Error(`Could not find --${name} in rule body`)
   return m[1].trim()
@@ -45,7 +47,7 @@ function cssVar(body: string, name: string): string {
 
 /** Convert a shadcn `H S% L%` triplet to sRGB [r,g,b] in 0..255. */
 function hslTripletToRgb(triplet: string): [number, number, number] {
-  const m = triplet.match(/^([\d.]+)\s+([\d.]+)%\s+([\d.]+)%$/)
+  const m = triplet.match(/^(\d[\d.]*)\s+(\d[\d.]*)%\s+(\d[\d.]*)%$/)
   if (!m) throw new Error(`Cannot parse HSL triplet: "${triplet}"`)
   const h = parseFloat(m[1])
   const s = parseFloat(m[2]) / 100

@@ -1,13 +1,16 @@
 FROM golang:1.25-alpine
 
-RUN apk add --no-cache git make
+RUN apk add --no-cache git make libffi mupdf-dev
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+# Copy module definition and local submodules so replace directives resolve.
+COPY catalog-api/go.mod catalog-api/go.sum ./
+COPY submodules/ /submodules/
 RUN go mod download
 
-COPY . .
+# Copy application source (overridden at runtime by volume mount in dev).
+COPY catalog-api/ .
 
 EXPOSE 8080
 

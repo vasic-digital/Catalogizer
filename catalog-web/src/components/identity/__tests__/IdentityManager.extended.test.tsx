@@ -87,9 +87,11 @@ function createWrapper() {
       queries: { retry: false },
     },
   })
-  return ({ children }: { children: React.ReactNode }) => (
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
+  Wrapper.displayName = 'TestWrapper'
+  return Wrapper
 }
 
 // ─── Test fixtures ────────────────────────────────────────────────────────
@@ -118,7 +120,7 @@ const mockIdentityNoSecret: Identity = {
   priority: 20,
 }
 
-const mockSshIdentity: Identity = {
+const _mockSshIdentity: Identity = {
   id: 3,
   name: 'SSH Key',
   type: 'ssh_key',
@@ -267,7 +269,7 @@ describe('IdentityManager — extended tests', () => {
       // raw secret_ref is NOT rendered anywhere in the DOM.
 
       mockIdentityApiFns.list.mockResolvedValue([mockIdentity])
-      const { container } = render(<IdentityManager />, { wrapper: createWrapper() })
+      render(<IdentityManager />, { wrapper: createWrapper() })
 
       await screen.findByText('NAS Admin')
 
@@ -377,6 +379,7 @@ describe('IdentityManager — extended tests', () => {
     it('shows skeleton placeholders while loading', async () => {
       // Delay the API response indefinitely
       mockIdentityApiFns.list.mockImplementation(
+        // eslint-disable-next-line @typescript-eslint/no-empty-function
         () => new Promise(() => {}) // never resolves
       )
 

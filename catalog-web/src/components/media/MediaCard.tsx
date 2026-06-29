@@ -132,7 +132,7 @@ export const MediaCard: React.FC<MediaCardProps> = React.memo(({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-500">
-              {getMediaIcon(media.media_type)}
+              {getMediaIcon(media.media_type ?? '')}
             </div>
           )}
 
@@ -201,7 +201,7 @@ export const MediaCard: React.FC<MediaCardProps> = React.memo(({
           {/* Media Type Badge */}
           <div className="absolute top-2 left-2">
             <span className="px-2 py-1 rounded-full text-xs font-medium bg-black/50 text-white backdrop-blur-sm">
-              {media.media_type.replace('_', ' ').toUpperCase()}
+              {media.media_type?.replace('_', ' ').toUpperCase()}
             </span>
           </div>
 
@@ -283,7 +283,7 @@ export const MediaCard: React.FC<MediaCardProps> = React.memo(({
 
           {/* Last Updated */}
           <div className="mt-3 text-xs text-gray-400">
-            Updated {formatDate(media.updated_at)}
+            Updated {media.updated_at ? formatDate(media.updated_at) : 'Unknown'}
           </div>
         </CardContent>
       </Card>

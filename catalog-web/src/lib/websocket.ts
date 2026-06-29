@@ -39,6 +39,8 @@ function toLegacyState(state: ConnectionState): 'connecting' | 'open' | 'closing
       return 'closing'
     case 'disconnected':
       return 'closed'
+    default:
+      return 'closed'
   }
 }
 

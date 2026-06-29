@@ -1,0 +1,49 @@
+=== Symbol Results ===
+
+Vulnerability #1: GO-2026-5061
+    Panic on VP8 alpha channel size mismatch in x/image/webp in
+    golang.org/x/image
+  More info: https://pkg.go.dev/vuln/GO-2026-5061
+  Module: golang.org/x/image
+    Found in: golang.org/x/image@v0.39.0
+    Fixed in: golang.org/x/image@v0.43.0
+    Example traces found:
+      #1: internal/services/cover_art_service.go:1109:34: services.CoverArtService.CacheExternalCoverArt calls image.Decode, which calls webp.Decode
+      #2: internal/services/quality_gate.go:175:31: services.QualityGate.Resolve calls quality.Assessor.Assess, which eventually calls webp.DecodeConfig
+      #3: internal/services/quality_gate.go:17:2: services.init calls quality.init, which calls webp.init
+
+Vulnerability #2: GO-2026-5031
+    Panic when reading out of bound palette index in golang.org/x/image/bmp
+  More info: https://pkg.go.dev/vuln/GO-2026-5031
+  Module: golang.org/x/image
+    Found in: golang.org/x/image@v0.39.0
+    Fixed in: golang.org/x/image@v0.41.0
+    Example traces found:
+      #1: internal/services/cover_art_service.go:1109:34: services.CoverArtService.CacheExternalCoverArt calls image.Decode, which calls bmp.Decode
+
+Vulnerability #3: GO-2026-5026
+    Invoking failure to reject ASCII-only Punycode-encoded labels in
+    golang.org/x/net/idna
+  More info: https://pkg.go.dev/vuln/GO-2026-5026
+  Module: golang.org/x/net
+    Found in: golang.org/x/net@v0.54.0
+    Fixed in: golang.org/x/net@v0.55.0
+    Example traces found:
+      #1: challenges/ch201_220_performance_challenges.go:1161:28: challenges.MetricsEndpointPerfChallenge.Execute calls http.Client.Do, which eventually calls idna.ToASCII
+
+Vulnerability #4: GO-2026-4961
+    Panic when decoding large WEBP image on 32-bit platforms in
+    golang.org/x/image
+  More info: https://pkg.go.dev/vuln/GO-2026-4961
+  Module: golang.org/x/image
+    Found in: golang.org/x/image@v0.39.0
+    Fixed in: golang.org/x/image@v0.42.0
+    Example traces found:
+      #1: internal/services/cover_art_service.go:1109:34: services.CoverArtService.CacheExternalCoverArt calls image.Decode, which calls webp.Decode
+      #2: internal/services/quality_gate.go:175:31: services.QualityGate.Resolve calls quality.Assessor.Assess, which eventually calls webp.DecodeConfig
+
+Your code is affected by 4 vulnerabilities from 2 modules.
+This scan also found 5 vulnerabilities in packages you import and 3
+vulnerabilities in modules you require, but your code doesn't appear to call
+these vulnerabilities.
+Use '-show verbose' for more details.
