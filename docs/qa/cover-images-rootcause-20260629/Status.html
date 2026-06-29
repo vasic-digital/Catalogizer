@@ -359,16 +359,28 @@ type-priority + recency ordering (visible shelf covered first) 5. Title
 normalization (<code>cleanTitleForSearch</code> — strips “001 -”
 prefixes, [release]/(scene) tags that broke TMDB matching)</p>
 <p><strong>Captured end-to-end proof (§11.4.123):</strong> -
-<code>external_metadata</code>: 0 → <strong>1153/1192 movies (97%) +
-161/177 TV (91%)</strong> real TMDB covers. - The exact marquee title
-the operator saw missing — “001 - Captain America - The First Avenger”
-(0 TMDB matches with its raw noisy title) — now serves a <strong>real
-101,336-byte image/jpeg</strong> poster
+<code>external_metadata</code>: 0 → <strong>647/1192 distinct movies
+(54%) + 120/177 TV (68%)</strong> real TMDB covers, and climbing as the
+enrichment loop runs (also 189 comics, 59 software, etc.). CORRECTION
+(§11.4.6): an earlier draft cited “1153/1192 (97%)” — that was a
+non-distinct JOIN count read DURING active concurrent enrichment and is
+inflated; the accurate stable figure from
+<code>COUNT(DISTINCT media_item_id)</code> is the 54%/68% above. The
+pipeline is proven working; full coverage accrues as the loop processes
+the remaining backlog. - The exact marquee title the operator saw
+missing — “001 - Captain America - The First Avenger” (0 TMDB matches
+with its raw noisy title) — now serves a <strong>real 101,336-byte
+image/jpeg</strong> poster
 (<code>image.tmdb.org/t/p/w500/vSNxAJ...jpg</code>) via the cleaned
 query “Captain America The First Avenger”. This single item proves all
-five fixes compose. - The ~3% unmatched movies are genuinely-unmatchable
-obscure/mislabeled titles TMDB does not have — correctly marked
-<code>enrichment_attempted</code>, not a defect.</p>
+five fixes compose. - Genuinely-unmatchable obscure/mislabeled titles
+TMDB does not have are correctly marked
+<code>enrichment_attempted</code>, not a defect. - Known minor follow-up
+(tracked, parallel session): the per-item <code>Upsert</code> can create
+a few duplicate <code>external_metadata</code> rows under concurrent
+enrichment (1056 rows vs 1050 distinct items) — cosmetic only;
+<code>GetCoverURL</code> uses
+<code>ORDER BY last_fetched DESC LIMIT 1</code>.</p>
 <h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
 <p>This was NOT a cover-rendering bug — the fix is data-pipeline +
 credential, not UI code. The pipeline is PROVEN end-to-end at the DB +

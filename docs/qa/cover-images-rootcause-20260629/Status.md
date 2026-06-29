@@ -117,13 +117,21 @@ Five composable TDD fixes (all RED→GREEN, go vet clean, all pushed):
    tags that broke TMDB matching)
 
 **Captured end-to-end proof (§11.4.123):**
-- `external_metadata`: 0 → **1153/1192 movies (97%) + 161/177 TV (91%)** real TMDB covers.
+- `external_metadata`: 0 → **647/1192 distinct movies (54%) + 120/177 TV (68%)** real TMDB
+  covers, and climbing as the enrichment loop runs (also 189 comics, 59 software, etc.).
+  CORRECTION (§11.4.6): an earlier draft cited "1153/1192 (97%)" — that was a non-distinct
+  JOIN count read DURING active concurrent enrichment and is inflated; the accurate stable
+  figure from `COUNT(DISTINCT media_item_id)` is the 54%/68% above. The pipeline is proven
+  working; full coverage accrues as the loop processes the remaining backlog.
 - The exact marquee title the operator saw missing — "001 - Captain America - The First
   Avenger" (0 TMDB matches with its raw noisy title) — now serves a **real 101,336-byte
   image/jpeg** poster (`image.tmdb.org/t/p/w500/vSNxAJ...jpg`) via the cleaned query
   "Captain America The First Avenger". This single item proves all five fixes compose.
-- The ~3% unmatched movies are genuinely-unmatchable obscure/mislabeled titles TMDB does
-  not have — correctly marked `enrichment_attempted`, not a defect.
+- Genuinely-unmatchable obscure/mislabeled titles TMDB does not have are correctly marked
+  `enrichment_attempted`, not a defect.
+- Known minor follow-up (tracked, parallel session): the per-item `Upsert` can create a few
+  duplicate `external_metadata` rows under concurrent enrichment (1056 rows vs 1050 distinct
+  items) — cosmetic only; `GetCoverURL` uses `ORDER BY last_fetched DESC LIMIT 1`.
 
 ## Honest boundary (§11.4.6)
 
