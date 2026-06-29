@@ -13,6 +13,7 @@ import com.catalogizer.androidtv.ui.screens.login.LoginScreen
 import com.catalogizer.androidtv.ui.screens.media.MediaDetailScreen
 import com.catalogizer.androidtv.ui.screens.search.SearchScreen
 import com.catalogizer.androidtv.ui.screens.settings.SettingsScreen
+import com.catalogizer.androidtv.ui.screens.viewer.ImageViewerScreen
 import com.catalogizer.androidtv.ui.screens.search.SearchViewModel
 import com.catalogizer.androidtv.ui.screens.category.CategoryBrowseScreen
 import com.catalogizer.androidtv.ui.player.ExoTvPlayerActivity
@@ -32,6 +33,9 @@ sealed class TVScreen(val route: String) {
     }
     object Player : TVScreen("player/{mediaId}") {
         fun createRoute(mediaId: Long) = "player/$mediaId"
+    }
+    object ImageViewer : TVScreen("image_viewer/{mediaId}") {
+        fun createRoute(mediaId: Long) = "image_viewer/$mediaId"
     }
     object Settings : TVScreen("settings")
     object Category : TVScreen("category/{mediaType}") {
@@ -121,6 +125,21 @@ fun TVNavigation(
                 // title to play (DEFECT-F, §11.4.143).
                 onNavigateToMediaDetail = { id ->
                     navController.navigate(TVScreen.MediaDetail.createRoute(id))
+                },
+                // Image leaf entities open the dedicated image viewer instead of
+                // the video player (a jpg/png/webp is not a playable stream).
+                onNavigateToImageViewer = { id ->
+                    navController.navigate(TVScreen.ImageViewer.createRoute(id))
+                }
+            )
+        }
+
+        composable(TVScreen.ImageViewer.route) { backStackEntry ->
+            val mediaId = backStackEntry.arguments?.getString("mediaId")?.toLongOrNull() ?: 0L
+            ImageViewerScreen(
+                mediaId = mediaId,
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
@@ -66,6 +67,38 @@ internal fun childSectionTitle(parentMediaType: String?): String = when (parentM
 }
 
 /**
+ * The leaf-entity action a directly-playable item dispatches to when the user
+ * presses the primary button. Container types (see [isContainerType]) never
+ * reach here — they show a children row instead of a primary action.
+ *
+ * EXTENSION POINT (mergeable, §11.4.124): a comic / book reader adds its own
+ * kind here (e.g. `COMIC`) + a branch in [leafActionKindFor], and the call site
+ * in [MediaDetailScreen] adds one `when` arm wired to a new `onNavigateTo…`
+ * callback — without disturbing the existing IMAGE / VIDEO routing. Keep
+ * [LeafActionKind.VIDEO] the exhaustive default so any unknown leaf type still
+ * gets the existing (working) video route rather than a dead end.
+ */
+internal enum class LeafActionKind { VIDEO, IMAGE }
+
+/** Image file extensions catalog-api recognises as still images. */
+private val IMAGE_EXTENSIONS =
+    setOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "heif", "tif", "tiff")
+
+/**
+ * Classify a leaf entity for primary-action dispatch. The authoritative signal
+ * is the backend `media_type` (catalog-api `MediaTypeImage = "image"`); when
+ * that is absent/unknown a file-extension fallback on the entity path keeps an
+ * image out of the video player. Pure + internal for unit testing without a
+ * device (§11.4.6 — classification proven, not guessed).
+ */
+internal fun leafActionKindFor(mediaType: String?, path: String? = null): LeafActionKind {
+    if (mediaType == "image") return LeafActionKind.IMAGE
+    val ext = path?.substringAfterLast('.', "")?.lowercase()
+    if (!ext.isNullOrEmpty() && ext in IMAGE_EXTENSIONS) return LeafActionKind.IMAGE
+    return LeafActionKind.VIDEO
+}
+
+/**
  * Enhanced media detail screen with improved UI/UX.
  * Features hero poster, metadata badges, action buttons with clear CTAs,
  * synopsis, and file info with proper spacing and visual feedback.
@@ -82,7 +115,12 @@ fun MediaDetailScreen(
     mediaId: Long,
     onNavigateBack: () -> Unit,
     onNavigateToPlayer: (Long) -> Unit,
-    onNavigateToMediaDetail: (Long) -> Unit = onNavigateToPlayer
+    onNavigateToMediaDetail: (Long) -> Unit = onNavigateToPlayer,
+    // Image leaf types dispatch here instead of the video player. Defaults to
+    // the player callback so existing callers/tests stay backwards-compatible
+    // (an image still routes somewhere rather than crashing) until the host
+    // wires the dedicated image-viewer route.
+    onNavigateToImageViewer: (Long) -> Unit = onNavigateToPlayer
 ) {
     val container = DependencyContainer.getInstance(androidx.compose.ui.platform.LocalContext.current)
     var mediaItem by remember { mutableStateOf<MediaItem?>(null) }
@@ -230,6 +268,11 @@ fun MediaDetailScreen(
                 // Container entities (show / season / album) are not directly
                 // playable — they expose their children instead of Play Now.
                 val isContainer = isContainerType(item.mediaType)
+                // Leaf-action dispatch: an "image" entity (or an image-extension
+                // path) opens the image viewer; everything else keeps the video
+                // player route. Container entities never use this.
+                val leafKind = leafActionKindFor(item.mediaType, item.smbPath)
+                val isImageLeaf = leafKind == LeafActionKind.IMAGE
                 val coverUrl = item.thumbnailUrl?.let { url ->
                     when {
                         url.startsWith("/") ->
@@ -392,7 +435,12 @@ fun MediaDetailScreen(
                             // row below so the user picks a specific title.
                             if (!isContainer) {
                                 Button(
-                                    onClick = { onNavigateToPlayer(mediaId) },
+                                    onClick = {
+                                        when (leafKind) {
+                                            LeafActionKind.IMAGE -> onNavigateToImageViewer(mediaId)
+                                            LeafActionKind.VIDEO -> onNavigateToPlayer(mediaId)
+                                        }
+                                    },
                                     modifier = Modifier
                                         .height(52.dp)
                                         .focusRequester(playButtonFocus)
@@ -414,9 +462,13 @@ fun MediaDetailScreen(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                                         ) {
-                                            M3Icon(Icons.Default.PlayArrow, "Play", Modifier.size(28.dp))
+                                            M3Icon(
+                                                if (isImageLeaf) Icons.Default.Image else Icons.Default.PlayArrow,
+                                                if (isImageLeaf) "View" else "Play",
+                                                Modifier.size(28.dp)
+                                            )
                                             Text(
-                                                "Play Now",
+                                                if (isImageLeaf) "View Image" else "Play Now",
                                                 style = MaterialTheme.typography.titleMedium,
                                                 fontWeight = FontWeight.SemiBold
                                             )

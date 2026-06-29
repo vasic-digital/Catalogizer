@@ -6,7 +6,7 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.View
 import android.widget.ProgressBar
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -37,7 +37,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * of a frozen black frame.
  */
 @SuppressLint("UnsafeOptInUsageError")
-class ExoTvPlayerActivity : AppCompatActivity() {
+class ExoTvPlayerActivity : ComponentActivity() {
 
     private var player: ExoPlayer? = null
     private lateinit var playerView: PlayerView
