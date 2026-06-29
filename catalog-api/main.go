@@ -753,6 +753,13 @@ func main() {
 	// MediaFileRepository StreamEntity uses.
 	comicPagesHandler := root_handlers.NewComicPagesHandler(mediaFileRepo, databaseDB, clientFactory)
 
+	// PDF-pages handler: renders PDF book pages on demand for the reader
+	// clients (e.g. the Android TV book reader). Resolves the entity's PDF
+	// file over its storage protocol via the same MediaFileRepository +
+	// ClientFactory the comic handler uses, then rasterises one page at a
+	// time with MuPDF (go-fitz).
+	pdfPagesHandler := root_handlers.NewPdfPagesHandler(mediaFileRepo, databaseDB, clientFactory)
+
 	// Media entity handler for structured media browsing
 	mediaEntityHandler := root_handlers.NewMediaEntityHandler(mediaItemRepo, mediaFileRepo, extMetaRepo, userMetaRepo, databaseDB)
 	mediaEntityHandler.SetCoverArtService(coverArtService)
@@ -1482,6 +1489,11 @@ func main() {
 			// stream an individual page image by 0-based index.
 			entityGroup.GET("/:id/pages", comicPagesHandler.ListComicPages)
 			entityGroup.GET("/:id/pages/:n", comicPagesHandler.GetComicPage)
+
+			// Book reader: count pages in a PDF and render an individual
+			// page image by 0-based index.
+			entityGroup.GET("/:id/pdf-pages", pdfPagesHandler.ListPdfPages)
+			entityGroup.GET("/:id/pdf-pages/:n", pdfPagesHandler.GetPdfPage)
 			entityGroup.GET("/:id/install-info", mediaEntityHandler.GetInstallInfo)
 			entityGroup.POST("/:id/metadata/refresh", mediaEntityHandler.RefreshEntityMetadata)
 			entityGroup.PUT("/:id/user-metadata", mediaEntityHandler.UpdateUserMetadata)
