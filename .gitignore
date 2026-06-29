@@ -325,6 +325,15 @@ deployment/.env*
 # QA session logs may contain API keys in error messages
 docs/reports/qa-sessions/**/logs/*.log
 
+# QA session database files (runtime artifacts)
+docs/reports/qa-sessions/**/*.db
+docs/reports/qa-sessions/**/*.db-shm
+docs/reports/qa-sessions/**/*.db-wal
+docs/reports/qa-sessions/**/*.db-journal
+
+# Deployment local env files (contain real credentials)
+deployment/*.local.env
+
 # Device connect list (local IP addresses, should not be committed)
 .devconnect
 
