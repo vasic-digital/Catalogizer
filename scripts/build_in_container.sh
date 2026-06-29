@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+#
+# §11.4.173 — Containerized + distributed build.
+#
+# Purpose:   Build catalog-api (Go) INSIDE a container on a REMOTE build host
+#            (never on the bare host), then bring the artifact BACK to this host.
+# Usage:     scripts/build_in_container.sh
+# Inputs:    env (all config-injected, §11.4.28; defaults shown):
+#              BUILD_HOST=thinker.local   BUILD_USER=milosvasic
+#              REMOTE_BUILD_DIR=catalogizer-build
+#              GO_BUILD_IMAGE=docker.io/library/golang:1.25-alpine
+# Outputs:   deploy/artifacts/catalog-api-container (the brought-back binary)
+#            + a printed proof block (remote md5 == local md5, file type).
+# Side-fx:   rsync's source to the remote build host; runs a podman build there.
+# Deps:      ssh, rsync, scp, podman (on the remote), a Go build image (cached remote).
+# Cross-ref: §11.4.173 (containerized+distributed build), §11.4.76 (containers),
+#            §11.4.161 (rootless), docs/scripts/build_in_container.md.
+set -euo pipefail
+
+BUILD_HOST="${BUILD_HOST:-thinker.local}"
+BUILD_USER="${BUILD_USER:-milosvasic}"
+REMOTE_DIR="${REMOTE_BUILD_DIR:-catalogizer-build}"
+GO_IMAGE="${GO_BUILD_IMAGE:-docker.io/library/golang:1.25-alpine}"
+PROJ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ART_DIR="$PROJ/deploy/artifacts"
+HOST="$BUILD_USER@$BUILD_HOST"
+mkdir -p "$ART_DIR"
+
+echo "[build] §11.4.173 containerized+distributed build → $HOST ($GO_IMAGE)"
+
+# 1. Sync source (catalog-api + the replaced submodules) to the remote build host.
+echo "[build] syncing source to $HOST:~/$REMOTE_DIR/ ..."
+ssh "$HOST" "mkdir -p ~/$REMOTE_DIR"
+rsync -az --delete \
+  --exclude '.git' --exclude 'node_modules' --exclude '/catalog-api/out' \
+  --exclude 'build/' --exclude '*.db' --exclude 'catalog-api-local' \
+  --exclude 'catalog-api-container' \
+  "$PROJ/catalog-api" "$PROJ/submodules" \
+  "$HOST:~/$REMOTE_DIR/"
+
+# 2. Build INSIDE the container ON the remote host (CGO on for go-sqlite3 → add a
+#    C toolchain to the alpine image at build time).
+echo "[build] building catalog-api in container on $BUILD_HOST ..."
+ssh "$HOST" "cd ~/$REMOTE_DIR && podman run --rm \
+  -v \$PWD:/src:Z -w /src/catalog-api \
+  -e GOTOOLCHAIN=local -e CGO_ENABLED=1 \
+  $GO_IMAGE sh -c 'apk add --no-cache build-base sqlite-dev >/dev/null 2>&1; go build -o catalog-api-container . && echo BUILD_OK'"
+
+# 3. Capture the remote artifact identity.
+REMOTE_MD5=$(ssh "$HOST" "md5sum ~/$REMOTE_DIR/catalog-api/catalog-api-container | cut -d' ' -f1")
+REMOTE_SIZE=$(ssh "$HOST" "stat -c %s ~/$REMOTE_DIR/catalog-api/catalog-api-container")
+
+# 4. Bring the artifact BACK to this host.
+echo "[build] copying artifact back to $ART_DIR/ ..."
+scp -q "$HOST:~/$REMOTE_DIR/catalog-api/catalog-api-container" "$ART_DIR/catalog-api-container"
+LOCAL_MD5=$(md5sum "$ART_DIR/catalog-api-container" | cut -d' ' -f1)
+
+# 5. Proof block (§11.4.6 — rock-solid evidence, no bluff).
+echo "=== §11.4.173 BUILD PROOF ==="
+echo "  build_host:   $BUILD_HOST (in container $GO_IMAGE)"
+echo "  remote_md5:   $REMOTE_MD5  (size $REMOTE_SIZE)"
+echo "  local_md5:    $LOCAL_MD5"
+echo "  md5_match:    $([ "$REMOTE_MD5" = "$LOCAL_MD5" ] && echo YES || echo NO)"
+echo "  artifact:     $(file -b "$ART_DIR/catalog-api-container")"
+[ "$REMOTE_MD5" = "$LOCAL_MD5" ] || { echo "[build] FAIL: md5 mismatch"; exit 1; }
+echo "[build] OK — built on $BUILD_HOST in a container, artifact verified on this host."
