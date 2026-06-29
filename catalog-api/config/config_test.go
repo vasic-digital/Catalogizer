@@ -395,6 +395,40 @@ func TestValidateConfig_DatabaseEnvOverrides(t *testing.T) {
 	assert.Equal(t, "require", config.Database.SSLMode)
 }
 
+func TestValidateConfig_PostgresDBFallback(t *testing.T) {
+	// POSTGRES_DB is the env var the postgres container sets (see
+	// docker-compose.dev.yml / docker-compose.yml). The API must honor it as a
+	// fallback for the database name when DATABASE_NAME is unset, while
+	// DATABASE_NAME (when present) always wins.
+
+	t.Run("POSTGRES_DB sets name when DATABASE_NAME unset", func(t *testing.T) {
+		os.Unsetenv("DATABASE_NAME")
+		os.Setenv("POSTGRES_DB", "catalogizer_dev")
+		defer os.Unsetenv("POSTGRES_DB")
+
+		config := getDefaultConfig()
+		config.Auth.EnableAuth = false
+		err := validateConfig(config)
+		assert.NoError(t, err)
+		assert.Equal(t, "catalogizer_dev", config.Database.Name)
+	})
+
+	t.Run("DATABASE_NAME wins when both set", func(t *testing.T) {
+		os.Setenv("DATABASE_NAME", "explicit_db")
+		os.Setenv("POSTGRES_DB", "container_db")
+		defer func() {
+			os.Unsetenv("DATABASE_NAME")
+			os.Unsetenv("POSTGRES_DB")
+		}()
+
+		config := getDefaultConfig()
+		config.Auth.EnableAuth = false
+		err := validateConfig(config)
+		assert.NoError(t, err)
+		assert.Equal(t, "explicit_db", config.Database.Name)
+	})
+}
+
 func TestValidateConfig_AuthEnvOverrides(t *testing.T) {
 	os.Setenv("JWT_SECRET", "this-is-a-very-long-jwt-secret-for-test-purposes-only")
 	os.Setenv("ADMIN_USERNAME", "env-admin")

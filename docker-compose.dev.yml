@@ -5,6 +5,7 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: catalogizer-postgres-dev
+    restart: unless-stopped
     environment:
       POSTGRES_USER: catalogizer
       POSTGRES_PASSWORD: dev_password_change_me
@@ -26,6 +27,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: catalogizer-redis-dev
+    restart: unless-stopped
     ports:
       - "26379:6379"
     volumes:
@@ -45,6 +47,7 @@ services:
       context: .
       dockerfile: catalog-api/Dockerfile.dev
     container_name: catalogizer-api-dev
+    restart: unless-stopped
     env_file: .env
     environment:
       # Database configuration
@@ -131,6 +134,7 @@ services:
   minio:
     image: quay.io/minio/minio:latest
     container_name: catalogizer-minio-dev
+    restart: unless-stopped
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin123

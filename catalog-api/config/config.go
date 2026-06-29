@@ -231,6 +231,12 @@ func validateConfig(config *Config) error {
 	}
 	if dbName := os.Getenv("DATABASE_NAME"); dbName != "" {
 		config.Database.Name = dbName
+	} else if dbName := os.Getenv("POSTGRES_DB"); dbName != "" {
+		// Fallback: POSTGRES_DB is the env var the postgres container is
+		// configured with. Honor it for the DB name when DATABASE_NAME is
+		// unset so the API picks up the same database the container uses.
+		// DATABASE_NAME always takes precedence when both are set.
+		config.Database.Name = dbName
 	}
 	if dbUser := os.Getenv("DATABASE_USER"); dbUser != "" {
 		config.Database.User = dbUser
