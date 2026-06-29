@@ -327,3 +327,174 @@ func TestMediaEntityHandler_EnrichAllEntities_NoDB(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "Database not available", resp["error"])
 }
+
+// TestMediaEntityHandler_EnrichSelectsItemsWithoutDirectoryAnalyses proves
+// that the enrichment selection reaches EVERY media item lacking external
+// metadata — including items that have NO directory_analyses row. The
+// original query inner-JOINed directory_analyses, so an item without such a
+// row (23704 of 27750 items in production) could never be enriched. The
+// LEFT JOIN makes those items reachable with an empty DirPath, so the
+// background job falls straight through to the TMDB/LLM path for them.
+func TestMediaEntityHandler_EnrichSelectsItemsWithoutDirectoryAnalyses(t *testing.T) {
+	db, cleanup := setupEntityTestDB(t)
+	defer cleanup()
+
+	handler, itemRepo := setupEntityHandler(t, db)
+	handler.db = db
+	ctx := context.Background()
+
+	_, typeID, err := itemRepo.GetMediaTypeByName(ctx, "movie")
+	require.NoError(t, err)
+
+	// Item WITH a directory_analyses row — was always reachable.
+	withDA, err := itemRepo.Create(ctx, &models.MediaItem{MediaTypeID: typeID, Title: "Has Directory", Status: "detected"})
+	require.NoError(t, err)
+	_, err = db.ExecContext(ctx,
+		`INSERT INTO directory_analyses (directory_path, media_item_id) VALUES (?, ?)`,
+		"/media/movies/Has Directory", withDA)
+	require.NoError(t, err)
+
+	// Item WITHOUT any directory_analyses row — the previously-unreachable
+	// case the inner JOIN silently dropped.
+	withoutDA, err := itemRepo.Create(ctx, &models.MediaItem{MediaTypeID: typeID, Title: "No Directory", Status: "detected"})
+	require.NoError(t, err)
+
+	entities, err := handler.selectEntitiesNeedingEnrichment(ctx, 50)
+	require.NoError(t, err)
+
+	got := make(map[int64]string, len(entities))
+	for _, e := range entities {
+		got[e.ID] = e.DirPath
+	}
+
+	// The item WITH directory_analyses must still be selected, carrying its path.
+	dirPath, ok := got[withDA]
+	assert.True(t, ok, "item WITH directory_analyses must be selected for enrichment")
+	assert.Equal(t, "/media/movies/Has Directory", dirPath)
+
+	// The item WITHOUT directory_analyses MUST now be selected (LEFT JOIN),
+	// with an empty DirPath so the local-cover lookup is skipped.
+	dirPath, ok = got[withoutDA]
+	assert.True(t, ok, "item WITHOUT directory_analyses MUST be selected (LEFT JOIN); the inner JOIN dropped it")
+	assert.Equal(t, "", dirPath, "item without directory_analyses must have empty DirPath so the local-cover lookup is skipped")
+}
+
+// TestMediaEntityHandler_EnrichExcludesItemsWithExternalMetadata proves the
+// LEFT JOIN change did NOT loosen the `WHERE em.id IS NULL` filter: items
+// that already carry external metadata are still excluded from enrichment.
+func TestMediaEntityHandler_EnrichExcludesItemsWithExternalMetadata(t *testing.T) {
+	db, cleanup := setupEntityTestDB(t)
+	defer cleanup()
+
+	handler, itemRepo := setupEntityHandler(t, db)
+	handler.db = db
+	ctx := context.Background()
+
+	_, typeID, err := itemRepo.GetMediaTypeByName(ctx, "movie")
+	require.NoError(t, err)
+
+	needs, err := itemRepo.Create(ctx, &models.MediaItem{MediaTypeID: typeID, Title: "Needs Cover", Status: "detected"})
+	require.NoError(t, err)
+
+	hasMeta, err := itemRepo.Create(ctx, &models.MediaItem{MediaTypeID: typeID, Title: "Already Enriched", Status: "detected"})
+	require.NoError(t, err)
+	coverURL := "/api/v1/download/file/1"
+	require.NoError(t, handler.extMetaRepo.Upsert(ctx, &models.ExternalMetadata{
+		MediaItemID: hasMeta,
+		Provider:    "local_scan",
+		ExternalID:  fmt.Sprintf("local:%d", hasMeta),
+		CoverURL:    &coverURL,
+	}))
+
+	entities, err := handler.selectEntitiesNeedingEnrichment(ctx, 50)
+	require.NoError(t, err)
+
+	ids := make(map[int64]bool, len(entities))
+	for _, e := range entities {
+		ids[e.ID] = true
+	}
+	assert.True(t, ids[needs], "item without external_metadata must be selected")
+	assert.False(t, ids[hasMeta], "item WITH external_metadata must be excluded from enrichment")
+}
+
+// TestMediaEntityHandler_MarkEnrichmentAttemptedAdvancesQueue proves the
+// progress-marker fix for the stuck-queue bug: when an item is processed but
+// no cover/metadata can be found (TMDB no-result AND LLM fallback empty), a
+// sentinel external_metadata row is written so the item is no longer selected
+// by `WHERE em.id IS NULL` on the next batch. Without the sentinel,
+// selectEntitiesNeedingEnrichment returns the SAME leading unmatchable items
+// on every call and the queue never advances to the real movies deeper in the
+// catalog (operator symptom: only ~5 covers ever appear).
+func TestMediaEntityHandler_MarkEnrichmentAttemptedAdvancesQueue(t *testing.T) {
+	db, cleanup := setupEntityTestDB(t)
+	defer cleanup()
+
+	handler, itemRepo := setupEntityHandler(t, db)
+	handler.db = db
+	ctx := context.Background()
+
+	_, typeID, err := itemRepo.GetMediaTypeByName(ctx, "movie")
+	require.NoError(t, err)
+
+	// An item whose enrichment yields nothing (noisy title, no TMDB match,
+	// no LLM fallback) — the leading unmatchable item that jammed the queue.
+	stuck, err := itemRepo.Create(ctx, &models.MediaItem{MediaTypeID: typeID, Title: "Noisy Album Title 2049 [FLAC]", Status: "detected"})
+	require.NoError(t, err)
+
+	// Precondition: with no external_metadata row, the item is selected.
+	before, err := handler.selectEntitiesNeedingEnrichment(ctx, 50)
+	require.NoError(t, err)
+	selectedBefore := false
+	for _, e := range before {
+		if e.ID == stuck {
+			selectedBefore = true
+		}
+	}
+	require.True(t, selectedBefore, "precondition: an item without external_metadata must be selected for enrichment")
+
+	// Process it: enrichment found nothing, so mark it attempted.
+	require.NoError(t, handler.markEnrichmentAttempted(ctx, stuck))
+
+	// After the sentinel, the item MUST no longer be selected — the queue
+	// advances instead of returning the same stuck item forever.
+	after, err := handler.selectEntitiesNeedingEnrichment(ctx, 50)
+	require.NoError(t, err)
+	for _, e := range after {
+		assert.NotEqual(t, stuck, e.ID, "item marked enrichment-attempted MUST NOT be re-selected; the queue must advance")
+	}
+}
+
+// TestMediaEntityHandler_EnrichmentAttemptedSentinelHasNoCover proves the
+// sentinel does NOT masquerade as a real cover. cover_art_service.GetCoverURL
+// selects `WHERE cover_url IS NOT NULL AND cover_url != ''`; the sentinel row
+// carries a NULL cover_url, so that lookup finds nothing and falls through to
+// the placeholder — no false cover is ever shown for an unmatchable item.
+func TestMediaEntityHandler_EnrichmentAttemptedSentinelHasNoCover(t *testing.T) {
+	db, cleanup := setupEntityTestDB(t)
+	defer cleanup()
+
+	handler, itemRepo := setupEntityHandler(t, db)
+	handler.db = db
+	ctx := context.Background()
+
+	_, typeID, err := itemRepo.GetMediaTypeByName(ctx, "movie")
+	require.NoError(t, err)
+
+	item, err := itemRepo.Create(ctx, &models.MediaItem{MediaTypeID: typeID, Title: "Unmatchable Comic Scan", Status: "detected"})
+	require.NoError(t, err)
+
+	require.NoError(t, handler.markEnrichmentAttempted(ctx, item))
+
+	// Exactly one (sentinel) external_metadata row exists for the item.
+	var total int
+	require.NoError(t, db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM external_metadata WHERE media_item_id = ?`, item).Scan(&total))
+	assert.Equal(t, 1, total, "exactly one sentinel external_metadata row must be written")
+
+	// Mirror GetCoverURL's filter: the sentinel must NOT present a usable cover.
+	var usableCovers int
+	require.NoError(t, db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM external_metadata
+		 WHERE media_item_id = ? AND cover_url IS NOT NULL AND cover_url != ''`, item).Scan(&usableCovers))
+	assert.Equal(t, 0, usableCovers, "sentinel row must carry a NULL/empty cover_url so GetCoverURL falls through to the placeholder")
+}

@@ -825,6 +825,71 @@ func (h *MediaEntityHandler) tryLLMFallback(ctx context.Context, title string, y
 	}
 }
 
+// entityDir pairs a media item id with its best-known directory path.
+// DirPath is the MIN(directory_analyses.directory_path) for the item, or
+// "" when the item has no directory_analyses row (the LEFT JOIN miss).
+type entityDir struct {
+	ID      int64
+	DirPath string
+}
+
+// enrichmentAttemptedProvider is the sentinel external_metadata provider written
+// for an item that was processed for enrichment but yielded no cover/metadata
+// (TMDB returned no result AND the LLM fallback was empty). It is a pure
+// progress marker — it makes em.id non-NULL for the item so
+// selectEntitiesNeedingEnrichment (which selects `WHERE em.id IS NULL`) stops
+// returning the SAME leading unmatchable items on every batch and the queue
+// advances to the real movies deeper in the catalog. A future "force
+// re-enrich" can retry these by filtering `WHERE em.provider != 'enrichment_attempted'`.
+const enrichmentAttemptedProvider = "enrichment_attempted"
+
+// markEnrichmentAttempted writes the sentinel external_metadata row for an item
+// whose enrichment found nothing. The row carries a NULL cover_url, so the
+// cover lookup in cover_art_service.GetCoverURL (which filters `cover_url IS NOT
+// NULL AND cover_url != ''`) never mistakes it for a real cover and still falls
+// through to the type placeholder. The successful enrichment paths (local_scan,
+// tmdb) are unaffected — they keep writing their own real rows.
+func (h *MediaEntityHandler) markEnrichmentAttempted(ctx context.Context, itemID int64) error {
+	return h.extMetaRepo.Upsert(ctx, &models.ExternalMetadata{
+		MediaItemID: itemID,
+		Provider:    enrichmentAttemptedProvider,
+		ExternalID:  fmt.Sprintf("attempted:%d", itemID),
+		CoverURL:    nil,
+	})
+}
+
+// selectEntitiesNeedingEnrichment returns up to `limit` media items that do
+// not yet have an external_metadata row. directory_analyses is LEFT JOINed
+// so items that lack a directory_analyses row are STILL reachable (DirPath
+// is "" for those); callers MUST skip the local-cover-file lookup when
+// DirPath is empty and fall through to the TMDB/LLM path, which only needs
+// the item's title/year. An inner JOIN here silently excluded every item
+// without a directory_analyses row from enrichment.
+func (h *MediaEntityHandler) selectEntitiesNeedingEnrichment(ctx context.Context, limit int) ([]entityDir, error) {
+	rows, err := h.db.QueryContext(ctx,
+		`SELECT mi.id, COALESCE(MIN(da.directory_path), '')
+		 FROM media_items mi
+		 LEFT JOIN directory_analyses da ON da.media_item_id = mi.id
+		 LEFT JOIN external_metadata em ON em.media_item_id = mi.id
+		 WHERE em.id IS NULL
+		 GROUP BY mi.id
+		 LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var entities []entityDir
+	for rows.Next() {
+		var ed entityDir
+		if err := rows.Scan(&ed.ID, &ed.DirPath); err != nil {
+			continue
+		}
+		entities = append(entities, ed)
+	}
+	return entities, rows.Err()
+}
+
 // EnrichAllEntities handles POST /api/v1/entities/enrich — batch metadata enrichment.
 // Returns 202 Accepted immediately and processes enrichment asynchronously in the
 // background. The caller can poll GET /api/v1/entities/stats to observe progress.
@@ -873,32 +938,13 @@ func (h *MediaEntityHandler) EnrichAllEntities(c *gin.Context) {
 		bgCtx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 		defer cancel()
 
-		// Get all entities that don't have external metadata yet
-		rows, err := h.db.QueryContext(bgCtx,
-			`SELECT mi.id, MIN(da.directory_path)
-			 FROM media_items mi
-			 JOIN directory_analyses da ON da.media_item_id = mi.id
-			 LEFT JOIN external_metadata em ON em.media_item_id = mi.id
-			 WHERE em.id IS NULL
-			 GROUP BY mi.id
-			 LIMIT ?`, limit)
+		// Get all entities that don't have external metadata yet. Uses a
+		// LEFT JOIN on directory_analyses so items without a
+		// directory_analyses row are still reachable (DirPath == "").
+		entities, err := h.selectEntitiesNeedingEnrichment(bgCtx, limit)
 		if err != nil {
 			logging.Warnf("EnrichAllEntities: background query failed: %v", err)
 			return
-		}
-		defer rows.Close()
-
-		type entityDir struct {
-			ID      int64
-			DirPath string
-		}
-		var entities []entityDir
-		for rows.Next() {
-			var ed entityDir
-			if err := rows.Scan(&ed.ID, &ed.DirPath); err != nil {
-				continue
-			}
-			entities = append(entities, ed)
 		}
 
 		if len(entities) == 0 {
@@ -920,29 +966,35 @@ func (h *MediaEntityHandler) EnrichAllEntities(c *gin.Context) {
 			default:
 			}
 
-			// Try local cover first
+			// Try local cover first — only when we know the entity's
+			// directory. Items without a directory_analyses row have an
+			// empty DirPath (LEFT JOIN miss); skipping the lookup avoids a
+			// degenerate `LIKE '/%cover.jpg'` pattern that would match
+			// unrelated files, and falls straight through to TMDB/LLM.
 			parentDir := ent.DirPath
 			found := false
-			for _, name := range coverNames {
-				var coverFileID int64
-				err := h.db.QueryRowContext(bgCtx,
-					`SELECT id FROM files WHERE directory_path LIKE ? LIMIT 1`,
-					parentDir+"/%"+name).Scan(&coverFileID)
-				if err == nil && coverFileID > 0 {
-					coverURL := fmt.Sprintf("/api/v1/download/file/%d", coverFileID)
-					meta := &models.ExternalMetadata{
-						MediaItemID: ent.ID,
-						Provider:    "local_scan",
-						ExternalID:  fmt.Sprintf("local:%d", ent.ID),
-						CoverURL:    &coverURL,
+			if parentDir != "" {
+				for _, name := range coverNames {
+					var coverFileID int64
+					err := h.db.QueryRowContext(bgCtx,
+						`SELECT id FROM files WHERE directory_path LIKE ? LIMIT 1`,
+						parentDir+"/%"+name).Scan(&coverFileID)
+					if err == nil && coverFileID > 0 {
+						coverURL := fmt.Sprintf("/api/v1/download/file/%d", coverFileID)
+						meta := &models.ExternalMetadata{
+							MediaItemID: ent.ID,
+							Provider:    "local_scan",
+							ExternalID:  fmt.Sprintf("local:%d", ent.ID),
+							CoverURL:    &coverURL,
+						}
+						if err := h.extMetaRepo.Upsert(bgCtx, meta); err != nil {
+							// Log but continue - cover was still found
+						}
+						localEnriched++
+						enriched++
+						found = true
+						break
 					}
-					if err := h.extMetaRepo.Upsert(bgCtx, meta); err != nil {
-						// Log but continue - cover was still found
-					}
-					localEnriched++
-					enriched++
-					found = true
-					break
 				}
 			}
 
@@ -981,9 +1033,22 @@ func (h *MediaEntityHandler) EnrichAllEntities(c *gin.Context) {
 						}
 						tmdbEnriched++
 						enriched++
+						found = true
 						// Rate limit TMDB API (40 requests per 10 seconds)
 						time.Sleep(250 * time.Millisecond)
 					}
+				}
+			}
+
+			// Progress marker: the item was processed but neither a local
+			// cover nor TMDB/LLM produced any metadata. Write a sentinel
+			// external_metadata row so em.id is no longer NULL for it —
+			// without this the `WHERE em.id IS NULL` query returns the SAME
+			// leading unmatchable items on every batch and the queue never
+			// reaches the real movies deeper in the catalog.
+			if !found {
+				if err := h.markEnrichmentAttempted(bgCtx, ent.ID); err != nil {
+					logging.Warnf("EnrichAllEntities: failed to mark item %d enrichment-attempted: %v", ent.ID, err)
 				}
 			}
 		}

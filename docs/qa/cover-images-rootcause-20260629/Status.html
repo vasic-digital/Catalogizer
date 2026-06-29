@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="catalog-cover-images-not-loading-root-cause-analysis">Catalog
+Cover Images Not Loading — Root Cause Analysis</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-29T13:30:00Z <strong>Reported by:</strong> Operator (escaped the
+green HelixQA campaign — §11.4.138) <strong>Authority:</strong>
+§11.4.102 systematic-debugging + §11.4.6 no-guessing + §11.4.123
+rock-solid-proof + §11.4.145 impact-research</p>
+<h2 id="symptom">Symptom</h2>
+<p>Every catalog item on Android TV (and all clients) shows a
+placeholder gradient + “unknown” badge instead of a real cover/poster
+image. <code>cover_url</code> for every item is
+<code>/api/v1/cover/placeholder/&lt;type&gt;</code>.</p>
+<h2 id="root-cause-fact-captured-evidence-not-guess">Root cause (FACT —
+captured evidence, not guess)</h2>
+<p>The cover pipeline is <strong>correct</strong>; there is simply
+<strong>no cover data to serve</strong>. Proven via direct PostgreSQL
+queries (<code>catalogizer_dev</code> DB):</p>
+<table>
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 30%" />
+<col style="width: 39%" />
+</colgroup>
+<thead>
+<tr>
+<th>Table</th>
+<th>Count</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>media_items</code></td>
+<td>27750</td>
+<td>full scanned catalog</td>
+</tr>
+<tr>
+<td><code>external_metadata</code></td>
+<td><strong>0</strong></td>
+<td>NO enrichment data exists for ANY item</td>
+</tr>
+<tr>
+<td><code>cover_art</code></td>
+<td><strong>0</strong></td>
+<td>NO cached covers</td>
+</tr>
+<tr>
+<td><code>directory_analyses</code></td>
+<td>4049</td>
+<td>only 4046 items are reachable by the enrichment query</td>
+</tr>
+</tbody>
+</table>
+<p><code>GetCoverURL</code> (cover_art_service.go:1446) is a passive
+lookup: checks <code>cover_art</code> then
+<code>external_metadata.cover_url</code>; both empty → returns
+placeholder. Placeholder-on-no-data is the <em>designed</em> fallback
+(cover_handler_test.go confirms), NOT a bug.</p>
+<h3 id="why-external_metadata-is-empty-the-terminal-cause">Why
+<code>external_metadata</code> is empty — the terminal cause</h3>
+<p><code>EnrichAllEntities</code> (media_entity_handler.go:833) tries,
+per item: (1) local cover file
+(<code>cover.jpg</code>/<code>folder.jpg</code>/<code>poster.jpg</code>
+in the item dir — none present on these SMB shares), (2) TMDB
+(<code>TMDB_API_KEY</code> — <strong>not configured</strong>), (3) LLM
+fallback.</p>
+<p>Captured API log (<code>/tmp/catalog-api.log</code>) — every
+enrichment attempt:</p>
+<pre><code>WARN handlers/media_entity_handler.go:810  LLM fallback failed for &#39;Phone Booth&#39;: LLM API returned HTTP 402
+WARN handlers/media_entity_handler.go:810  LLM fallback failed for &#39;The Guilty&#39;:  LLM API returned HTTP 402
+INFO handlers/media_entity_handler.go:991  EnrichAllEntities: completed — 0 enriched (0 local, 0 TMDB) out of 10 queued</code></pre>
+<p><strong>HTTP 402 = Payment Required.</strong> The LLM provider the
+API selected (DeepSeek, priority-1) is out of credit. Direct probes of
+every configured LLM provider:</p>
+<table>
+<thead>
+<tr>
+<th>Provider (priority order)</th>
+<th>Chat probe</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DeepSeek (<strong>selected</strong>)</td>
+<td>HTTP 402</td>
+<td>out of credit</td>
+</tr>
+<tr>
+<td>OpenRouter</td>
+<td>HTTP 402</td>
+<td>out of credit</td>
+</tr>
+<tr>
+<td><strong>Groq</strong></td>
+<td><strong>HTTP 200</strong></td>
+<td><strong>funded &amp; usable</strong></td>
+</tr>
+<tr>
+<td>Gemini</td>
+<td>HTTP 400</td>
+<td>payload-format (may work)</td>
+</tr>
+<tr>
+<td>Kimi</td>
+<td>HTTP 401</td>
+<td>bad/expired key</td>
+</tr>
+</tbody>
+</table>
+<h2 id="two-distinct-defects">Two distinct defects</h2>
+<ol type="1">
+<li><p><strong>CREDENTIAL (operator):</strong> no movie-poster source is
+usable — TMDB key absent; the chosen LLM (DeepSeek) is out of credit.
+The <em>correct</em> poster source is TMDB (a real poster CDN);
+LLM-generated URLs are best-effort and may hallucinate/404.</p></li>
+<li><p><strong>CODE (§11.4.145 impact-research catch):</strong>
+<code>LLMProvider</code> factory
+(internal/media/providers/llm_provider.go:46) binds to the FIRST
+non-empty key (DeepSeek) for the process lifetime and has <strong>no
+failover</strong>. When DeepSeek 402s, it gives up — even though
+<strong>Groq (HTTP 200) is funded and available</strong>. A resilient
+design would fail over to the next candidate on 402/429/5xx.</p></li>
+<li><p><strong>ARCHITECTURAL (secondary):</strong> the enrichment
+background query JOINs <code>directory_analyses</code>, so only 4046 of
+27750 items are even reachable — 85% of the catalog cannot be enriched
+by the current endpoint regardless of credentials.</p></li>
+</ol>
+<h2 id="fix-direction-pending-operator-decision">Fix direction (pending
+operator decision)</h2>
+<ul>
+<li><strong>Option A (best quality):</strong> operator adds a
+<code>TMDB_API_KEY</code> to <code>.env</code> → real posters from the
+TMDB CDN. Plus code failover (Option B) as resilience.</li>
+<li><strong>Option B (zero operator action, code-only):</strong>
+implement LLM-provider failover so enrichment uses the funded Groq
+provider instead of the dead DeepSeek. Restores covers via best-effort
+LLM URLs (quality caveat — must verify URLs resolve, §11.4.123).</li>
+<li><strong>Option C (both):</strong> TMDB primary + LLM failover
+fallback + fix the <code>directory_analyses</code> reachability gap so
+all 27750 items can be enriched.</li>
+</ul>
+<h2 id="evidence-files">Evidence files</h2>
+<ul>
+<li><code>/tmp/catalog-api.log</code> — the HTTP 402 enrichment failures
+(captured).</li>
+<li>DB query output (above) — external_metadata=0, cover_art=0.</li>
+<li>LLM provider probe results (above).</li>
+</ul>
+<h2 id="resolution-fixed-captured-end-to-end-proof">Resolution (FIXED —
+captured end-to-end proof)</h2>
+<p>Operator supplied a working TMDB key + chose “fix reachability for
+all 27750 items”. Applied THREE fixes, all TDD RED→GREEN,
+<code>go vet</code> clean:</p>
+<ol type="1">
+<li><strong>TMDB key</strong> stored in gitignored <code>.env</code>
+(leak-audited, verified untracked). Verified live: HTTP 200, real
+posters (Iron Man → <code>/78lPtwv72e...jpg</code>).</li>
+<li><strong>Reachability</strong> (media_entity_handler.go): inner JOIN
+→ LEFT JOIN on directory_analyses so all 27750 items reachable (was
+4046). 7/7 tests pass.</li>
+<li><strong>LLM failover</strong> (llm_provider.go): DeepSeek 402 →
+fails over to funded Groq. 5 tests pass.</li>
+<li><strong>Progress marker</strong> (in progress): enrichment was
+reprocessing the same unmatchable leading items forever (no “tried”
+sentinel) — being TDD-fixed so the queue advances to the real
+movies.</li>
+</ol>
+<p><strong>End-to-end captured proof (§11.4.123):</strong> - DB:
+<code>external_metadata</code> 0 → 15 (and climbing), all with real
+cover URLs. - API log: TMDB now queried successfully (no more HTTP 402);
+<code>EnrichAllEntities: completed — 2 enriched (2 TMDB)</code>. - Cover
+bytes: “Phone Booth” entity <code>cover_url</code> →
+<code>image.tmdb.org/.../r6lI...jpg</code>; the image-proxy serves a
+<strong>64,105-byte real image/jpeg</strong> (was 1,398-byte placeholder
+SVG). - TMDB confirmed to match all visible movies (Iron Man, Captain
+America, Avengers) with real poster_paths.</p>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<p>This was NOT a cover-rendering bug — the fix is data-pipeline +
+credential, not UI code. The pipeline is PROVEN working end-to-end.
+Remaining: bulk enrichment across all 27750 items is a long-running TMDB
+batch job (running in durable tmux); the progress-marker fix lets it
+advance past unmatchable items. Full catalog cover coverage will
+complete over time as the enrichment loop processes the backlog.</p>
+</body>
+</html>

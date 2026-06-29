@@ -125,91 +125,76 @@ done
 wait
 ok "APK deployed to all devices"
 
-# Set up ADB reverse for network access
+# Set up ADB reverse for network access.
+# The app uses http://localhost:8080 by default (configured in login_on_device);
+# the catalog-api may listen on a different host port (e.g. 28080). Forward the
+# device's :8080 to the host's actual API port so the app reaches it.
+API_PORT="${API_URL##*:}"; API_PORT="${API_PORT%%/*}"; [[ "$API_PORT" =~ ^[0-9]+$ ]] || API_PORT=8080
 for serial in "${TV_DEVICES[@]}"; do
-    adb -s "$serial" reverse tcp:8080 tcp:8080 2>/dev/null || true
+    adb -s "$serial" reverse tcp:8080 "tcp:${API_PORT}" 2>/dev/null || true
 done
-ok "ADB reverse port forwarding set"
+ok "ADB reverse port forwarding set (device :8080 -> host :${API_PORT})"
 
-# Launch app, configure server URL, and login on each device
-# login_on_device: Uses uiautomator to find exact field coordinates, types credentials,
-# and verifies login succeeded by checking UI state. Returns 0 on success, 1 on failure.
+# Launch app, configure server URL, and login on each device.
+#
+# §11.4.117 PIXEL-ORACLE LOGIN: the Android TV build is Jetpack-Compose-for-TV,
+# whose accessibility hierarchy is EMPTY (`uiautomator dump` returns 0 nodes). The
+# old hierarchy-bounds approach therefore (a) could never find the fields and
+# (b) verified success by grepping the same empty dump for "Sign In" — which, on
+# an empty dump, ALWAYS reports "past login" (a §11.4.107(2)/§11.4 PASS-bluff:
+# the oracle reads from a source that can see nothing). Reconciled per §11.4.120:
+# fixed-coordinate input (calibrated on the 1920x1080 login screen) + IME ENTER to
+# submit + a REAL sink-side verification (§11.4.69) — poll the device's own okhttp
+# log for the authenticated catalog fetch. No hierarchy dependency, no blind PASS.
+#
+# Returns 0 on VERIFIED login (real catalog API response observed), 1 otherwise.
 login_on_device() {
     local SERIAL="$1"
     local DIR="$2"
     local ATTEMPT="$3"
 
-    # Dump UI to find exact field coordinates
-    adb -s "$SERIAL" shell uiautomator dump /sdcard/helixqa_ui.xml 2>/dev/null
-    local ui_xml
-    ui_xml=$(adb -s "$SERIAL" shell cat /sdcard/helixqa_ui.xml 2>/dev/null)
+    # Field coordinates calibrated on the 1920x1080 Compose-TV login screen.
+    # Username EditText ~y=314, Password ~y=466, Server URL ~y=937 (all centered x=960).
+    local UX=960 UY=314 PX=960 PY=466 SVX=960 SVY=937
 
-    # Extract Username field center coordinates
-    local username_bounds
-    username_bounds=$(echo "$ui_xml" | grep -oP 'text="Username"[^/]*bounds="\K[^"]+' | head -1)
-    # Extract Password field center coordinates
-    local password_bounds
-    password_bounds=$(echo "$ui_xml" | grep -oP 'text="Password"[^/]*bounds="\K[^"]+' | head -1)
-    # Extract Sign In button center
-    local signin_bounds
-    signin_bounds=$(echo "$ui_xml" | grep -oP 'text="Sign In"[^/]*bounds="\K[^"]+' | head -1)
+    # 1) Configure server URL → http://localhost:8080 (adb-reverse forwards to the API).
+    adb -s "$SERIAL" shell input tap "$SVX" "$SVY"; sleep 1
+    adb -s "$SERIAL" shell input keyevent KEYCODE_MOVE_END; sleep 0.2
+    for _ in $(seq 1 48); do adb -s "$SERIAL" shell input keyevent KEYCODE_DEL; done
+    adb -s "$SERIAL" shell input text "http://localhost:8080"; sleep 0.5
+    adb -s "$SERIAL" shell input keyevent KEYCODE_BACK; sleep 0.5
 
-    if [[ -z "$username_bounds" ]] || [[ -z "$password_bounds" ]]; then
-        warn "  Could not find login fields in UI dump (attempt $ATTEMPT)"
-        return 1
-    fi
-
-    # Parse bounds [left,top][right,bottom] -> center (x,y)
-    # Username field is the EditText ABOVE the "Username" label
-    local u_left u_top u_right u_bottom
-    u_left=$(echo "$ui_xml" | grep -B1 'text="Username"' | grep 'EditText' | grep -oP 'bounds="\[\K\d+' | head -1)
-    u_top=$(echo "$ui_xml" | grep -B1 'text="Username"' | grep 'EditText' | grep -oP 'bounds="\[\d+,\K\d+' | head -1)
-    u_right=$(echo "$ui_xml" | grep -B1 'text="Username"' | grep 'EditText' | grep -oP '\]\[\K\d+' | head -1)
-    u_bottom=$(echo "$ui_xml" | grep -B1 'text="Username"' | grep 'EditText' | grep -oP '\]\[\d+,\K\d+' | head -1)
-
-    local p_left p_top p_right p_bottom
-    p_left=$(echo "$ui_xml" | grep -B1 'text="Password"' | grep 'EditText' | grep -oP 'bounds="\[\K\d+' | head -1)
-    p_top=$(echo "$ui_xml" | grep -B1 'text="Password"' | grep 'EditText' | grep -oP 'bounds="\[\d+,\K\d+' | head -1)
-    p_right=$(echo "$ui_xml" | grep -B1 'text="Password"' | grep 'EditText' | grep -oP '\]\[\K\d+' | head -1)
-    p_bottom=$(echo "$ui_xml" | grep -B1 'text="Password"' | grep 'EditText' | grep -oP '\]\[\d+,\K\d+' | head -1)
-
-    # Use fallback coordinates if parsing fails
-    local ux=$((${u_left:-480} + (${u_right:-1440} - ${u_left:-480}) / 2))
-    local uy=$((${u_top:-323} + (${u_bottom:-451} - ${u_top:-323}) / 2))
-    local px=$((${p_left:-480} + (${p_right:-1440} - ${p_left:-480}) / 2))
-    local py=$((${p_top:-475} + (${p_bottom:-603} - ${p_top:-475}) / 2))
-
-    log "    Attempt $ATTEMPT: Username@($ux,$uy) Password@($px,$py)"
-
-    # Clear any existing text in fields first
-    adb -s "$SERIAL" shell input tap "$ux" "$uy"; sleep 1
+    # 2) Username.
+    adb -s "$SERIAL" shell input tap "$UX" "$UY"; sleep 1
     adb -s "$SERIAL" shell input keyevent KEYCODE_MOVE_END; sleep 0.2
     for _ in $(seq 1 20); do adb -s "$SERIAL" shell input keyevent KEYCODE_DEL; done
     adb -s "$SERIAL" shell input text "admin"; sleep 0.5
     adb -s "$SERIAL" shell input keyevent KEYCODE_BACK; sleep 0.5
 
-    adb -s "$SERIAL" shell input tap "$px" "$py"; sleep 1
+    # 3) Password — then submit via the IME DONE/ENTER action on the field.
+    adb -s "$SERIAL" shell input tap "$PX" "$PY"; sleep 1
     adb -s "$SERIAL" shell input keyevent KEYCODE_MOVE_END; sleep 0.2
     for _ in $(seq 1 20); do adb -s "$SERIAL" shell input keyevent KEYCODE_DEL; done
     adb -s "$SERIAL" shell input text "admin123"; sleep 0.5
-    adb -s "$SERIAL" shell input keyevent KEYCODE_BACK; sleep 0.5
 
-    # TAB to Sign In, ENTER to submit
-    adb -s "$SERIAL" shell input keyevent KEYCODE_TAB; sleep 0.5
+    # Clear logcat so the verification only sees THIS attempt's network traffic.
+    adb -s "$SERIAL" logcat -c 2>/dev/null || true
     adb -s "$SERIAL" shell input keyevent KEYCODE_ENTER; sleep 8
 
     adb -s "$SERIAL" exec-out screencap -p > "$DIR/screenshots/00${ATTEMPT}-login-attempt.png" 2>/dev/null
 
-    # VERIFY login: dump UI and check if "Sign In" text is still present
-    adb -s "$SERIAL" shell uiautomator dump /sdcard/helixqa_ui2.xml 2>/dev/null
-    local post_ui
-    post_ui=$(adb -s "$SERIAL" shell cat /sdcard/helixqa_ui2.xml 2>/dev/null)
-    if echo "$post_ui" | grep -q "Sign In"; then
-        warn "    Login attempt $ATTEMPT FAILED — still on login screen"
-        return 1
-    else
-        ok "    Login attempt $ATTEMPT SUCCEEDED — past login screen"
+    # §11.4.69 SINK-SIDE VERIFICATION: the app, once authenticated, fetches the
+    # media catalog. Observing a real /api/v1 media response in the device okhttp
+    # log proves login genuinely succeeded — it cannot be faked by an empty UI dump.
+    local netlog
+    netlog=$(adb -s "$SERIAL" logcat -d -t 400 2>/dev/null | grep -iE 'okhttp|/api/v1|"total":|media_type_id|"items"')
+    if echo "$netlog" | grep -qE '"items"|"total":|media_type_id|/api/v1/(entities|media|catalog)'; then
+        ok "    Login attempt $ATTEMPT SUCCEEDED — authenticated catalog fetch observed (sink-side §11.4.69)"
+        echo "$netlog" | tail -5 > "$DIR/evidence/login-catalog-fetch-attempt${ATTEMPT}.txt" 2>/dev/null
         return 0
+    else
+        warn "    Login attempt $ATTEMPT FAILED — no authenticated catalog fetch in device network log"
+        return 1
     fi
 }
 

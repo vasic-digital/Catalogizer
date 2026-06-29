@@ -378,3 +378,9 @@ docs/security/trivy-fs-*.json
 catalog-api-*-bin
 # Runtime DB dir (catalog-api run from repo root) — §11.4.30
 /data/
+
+# Session scratch (cover-fix work 2026-06-29) — never commit
+/scratch_launch_api.sh
+/run_catalog_api_durable.sh
+/enrich_loop.sh
+/scratchpad_api.env
