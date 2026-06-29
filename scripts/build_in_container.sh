@@ -20,7 +20,9 @@ set -euo pipefail
 BUILD_HOST="${BUILD_HOST:-thinker.local}"
 BUILD_USER="${BUILD_USER:-milosvasic}"
 REMOTE_DIR="${REMOTE_BUILD_DIR:-catalogizer-build}"
-GO_IMAGE="${GO_BUILD_IMAGE:-docker.io/library/golang:1.25-alpine}"
+# glibc-based (debian) golang image — NOT alpine/musl: a CGO dep (docx.c) references glibc
+# _FORTIFY_SOURCE symbols (__snprintf_chk) that musl lacks, so an alpine build fails at link.
+GO_IMAGE="${GO_BUILD_IMAGE:-docker.io/library/golang:1.25-bookworm}"
 PROJ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ART_DIR="$PROJ/deploy/artifacts"
 HOST="$BUILD_USER@$BUILD_HOST"
@@ -44,7 +46,7 @@ echo "[build] building catalog-api in container on $BUILD_HOST ..."
 ssh "$HOST" "cd ~/$REMOTE_DIR && podman run --rm \
   -v \$PWD:/src:Z -w /src/catalog-api \
   -e GOTOOLCHAIN=local -e CGO_ENABLED=1 \
-  $GO_IMAGE sh -c 'apk add --no-cache build-base sqlite-dev >/dev/null 2>&1; go build -o catalog-api-container . && echo BUILD_OK'"
+  $GO_IMAGE sh -c '(command -v apk >/dev/null 2>&1 && apk add --no-cache build-base sqlite-dev >/dev/null 2>&1) || true; go build -o catalog-api-container . && echo BUILD_OK'"
 
 # 3. Capture the remote artifact identity.
 REMOTE_MD5=$(ssh "$HOST" "md5sum ~/$REMOTE_DIR/catalog-api/catalog-api-container | cut -d' ' -f1")
