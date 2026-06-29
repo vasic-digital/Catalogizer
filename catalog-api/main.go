@@ -11,6 +11,7 @@ import (
 	"catalogizer/internal/eventbus"
 	"catalogizer/internal/firebase"
 	"catalogizer/internal/handlers"
+	"catalogizer/internal/infra"
 	"catalogizer/internal/logging"
 	"catalogizer/internal/media/providers"
 	"catalogizer/internal/metrics"
@@ -360,6 +361,22 @@ func main() {
 	// Default SSLMode
 	if cfg.Database.SSLMode == "" {
 	cfg.Database.SSLMode = "disable"
+	}
+
+	// §11.4.76: provision the distributed runtime infra (postgres/redis/minio)
+	// via the containers submodule BEFORE connecting to the database. Off by
+	// default (INFRA_PROVISION_ENABLED unset/false) so existing behaviour is
+	// unchanged; when enabled it is idempotent — already-running infra is
+	// TCP-discovered and skipped, only a genuinely-down stack is provisioned.
+	// Fail-soft by default: log and continue (the DB connect below then fails
+	// loudly if the infra is truly unavailable); fail-fast when
+	// INFRA_PROVISION_REQUIRED=true.
+	if err := infra.Provision(context.Background()); err != nil {
+		required, _ := strconv.ParseBool(os.Getenv("INFRA_PROVISION_REQUIRED"))
+		if required {
+			logging.Fatal("infra provisioning failed (INFRA_PROVISION_REQUIRED=true)", logging.ErrorField(err))
+		}
+		logging.Errorf("infra provisioning failed (continuing; set INFRA_PROVISION_REQUIRED=true to make fatal): %v", err)
 	}
 
 	// Initialize single database connection
