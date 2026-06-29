@@ -20,6 +20,7 @@ import (
 	"catalogizer/utils"
 
 	"github.com/gin-gonic/gin"
+	rardecode "github.com/nwaples/rardecode/v2"
 )
 
 // ComicPagesHandler serves individual image pages out of comic-book
@@ -39,11 +40,13 @@ import (
 // Supported archive formats:
 //   - .cbz  (ZIP container)  — fully supported via the stdlib
 //     archive/zip reader.
-//   - .cbr  (RAR container)  — NOT yet supported. The project has no
-//     RAR decoder dependency, so rather than silently mis-serve or add
-//     a dependency without authorisation, the handler returns an honest
-//     HTTP 501 (see ListComicPages / GetComicPage). TODO: wire a rar
-//     decoder (e.g. github.com/nwaples/rardecode) once approved.
+//   - .cbr  (RAR container)  — fully supported via the pure-Go (no CGO)
+//     github.com/nwaples/rardecode/v2 streaming decoder. RAR has no
+//     central directory, so listing pages is a single forward pass over
+//     the entry headers and extracting page n is a fresh forward pass to
+//     that entry (only one page is buffered — bounded memory, §12.6). The
+//     SAME multi-protocol byte resolution, page-image filter, and natural
+//     sort as .cbz are reused.
 //
 // Page indexing is ZERO-BASED: the `index` field returned by
 // ListComicPages starts at 0, and GET .../pages/:n expects the same
@@ -151,9 +154,44 @@ func isCBR(path string) bool {
 //     io.ReaderAt. Bounded to disk rather than RAM (§12.6); the temp file is
 //     removed on cleanup (§11.4.14).
 func (h *ComicPagesHandler) openComicArchive(ctx context.Context, sf *repository.StreamableFile) (*zip.Reader, func(), error) {
-	root, err := h.getStorageRootForFile(ctx, sf.FileID)
+	ra, size, cleanup, err := h.resolveComicReaderAt(ctx, sf, ".cbz")
 	if err != nil {
 		return nil, nil, err
+	}
+	zr, zerr := zip.NewReader(ra, size)
+	if zerr != nil {
+		cleanup()
+		return nil, nil, fmt.Errorf("read comic zip directory: %w", zerr)
+	}
+	return zr, cleanup, nil
+}
+
+// resolveComicReaderAt performs the multi-protocol byte resolution shared by
+// every comic format (.cbz and .cbr): it resolves the file's storage backend
+// (SMB / FTP / NFS / WebDAV / local) via the same ClientFactory the
+// StreamHandler uses and returns an io.ReaderAt over the archive bytes, the
+// archive size, and a cleanup func that releases every underlying resource
+// (handle / temp file / client connection). The caller MUST defer cleanup.
+//
+// Two access strategies, chosen from the real client capabilities (§11.4.6),
+// never guessed:
+//
+//   - Random-access (local + SMB): the protocol client implements
+//     filesystem.SeekableClient and the handle it returns is an io.ReaderAt
+//     (os.File and smb2.File both implement ReadAt). The whole archive is
+//     NEVER downloaded for a .cbz (zip reads only the central directory + the
+//     requested page); for a .cbr the decoder streams forward over a
+//     SectionReader on the same ReaderAt. Bounded memory (§12.6).
+//   - Buffered fallback (FTP / WebDAV / NFS, or any seekable handle that is
+//     not an io.ReaderAt): the only view is a streaming io.Reader, so the
+//     archive is copied to a temp file (os.CreateTemp), which IS an
+//     io.ReaderAt. Bounded to disk rather than RAM (§12.6); the temp file is
+//     removed on cleanup (§11.4.14). tmpSuffix only labels the temp file with
+//     the archive's extension.
+func (h *ComicPagesHandler) resolveComicReaderAt(ctx context.Context, sf *repository.StreamableFile, tmpSuffix string) (io.ReaderAt, int64, func(), error) {
+	root, err := h.getStorageRootForFile(ctx, sf.FileID)
+	if err != nil {
+		return nil, 0, nil, err
 	}
 
 	fsClient, err := h.clientFactory.CreateClient(&filesystem.StorageConfig{
@@ -163,10 +201,10 @@ func (h *ComicPagesHandler) openComicArchive(ctx context.Context, sf *repository
 		Settings: comicStorageRootSettings(root),
 	})
 	if err != nil {
-		return nil, nil, fmt.Errorf("create %s filesystem client: %w", root.Protocol, err)
+		return nil, 0, nil, fmt.Errorf("create %s filesystem client: %w", root.Protocol, err)
 	}
 	if err := fsClient.Connect(ctx); err != nil {
-		return nil, nil, fmt.Errorf("connect to %s storage: %w", root.Protocol, err)
+		return nil, 0, nil, fmt.Errorf("connect to %s storage: %w", root.Protocol, err)
 	}
 	// The base cleanup disconnects the client; later strategies prepend their
 	// own resource releases so cleanup always tears everything down in order.
@@ -177,13 +215,7 @@ func (h *ComicPagesHandler) openComicArchive(ctx context.Context, sf *repository
 		if rs, oerr := sc.OpenSeekable(ctx, sf.Path); oerr == nil {
 			size, serr := rs.Seek(0, io.SeekEnd)
 			if ra, isReaderAt := rs.(io.ReaderAt); isReaderAt && serr == nil && size > 0 {
-				zr, zerr := zip.NewReader(ra, size)
-				if zerr != nil {
-					_ = rs.Close()
-					disconnect()
-					return nil, nil, fmt.Errorf("read comic zip directory: %w", zerr)
-				}
-				return zr, func() { _ = rs.Close(); disconnect() }, nil
+				return ra, size, func() { _ = rs.Close(); disconnect() }, nil
 			}
 			// Seekable handle is not a usable io.ReaderAt (or size unknown):
 			// release it and fall through to the buffered path.
@@ -196,13 +228,13 @@ func (h *ComicPagesHandler) openComicArchive(ctx context.Context, sf *repository
 	reader, err := fsClient.ReadFile(ctx, sf.Path)
 	if err != nil {
 		disconnect()
-		return nil, nil, fmt.Errorf("open comic file on %s storage: %w", root.Protocol, err)
+		return nil, 0, nil, fmt.Errorf("open comic file on %s storage: %w", root.Protocol, err)
 	}
-	tmp, err := os.CreateTemp("", "catalogizer-comic-*.cbz")
+	tmp, err := os.CreateTemp("", "catalogizer-comic-*"+tmpSuffix)
 	if err != nil {
 		_ = reader.Close()
 		disconnect()
-		return nil, nil, fmt.Errorf("create temp comic buffer: %w", err)
+		return nil, 0, nil, fmt.Errorf("create temp comic buffer: %w", err)
 	}
 	// Removes the temp file AND disconnects. os.Remove after Close so the fd
 	// is released first (§11.4.14 — leave no orphan temp files).
@@ -215,16 +247,11 @@ func (h *ComicPagesHandler) openComicArchive(ctx context.Context, sf *repository
 	_ = reader.Close()
 	if err != nil {
 		removeAndDisconnect()
-		return nil, nil, fmt.Errorf("buffer comic file from %s storage: %w", root.Protocol, err)
+		return nil, 0, nil, fmt.Errorf("buffer comic file from %s storage: %w", root.Protocol, err)
 	}
 	// *os.File is an io.ReaderAt; ReadAt is offset-independent, so the
 	// end-of-file write offset left by io.Copy does not matter here.
-	zr, err := zip.NewReader(tmp, n)
-	if err != nil {
-		removeAndDisconnect()
-		return nil, nil, fmt.Errorf("read comic zip directory: %w", err)
-	}
-	return zr, removeAndDisconnect, nil
+	return tmp, n, removeAndDisconnect, nil
 }
 
 // getStorageRootForFile looks up the storage root (protocol, host, share,
@@ -362,6 +389,56 @@ func comicPageEntries(zr *zip.Reader) []*zip.File {
 	return out
 }
 
+// isComicCbrPage applies the SAME page-image filter as comicPageEntries (skip
+// directories, __MACOSX/ resource forks, ._ dotfiles, and non-image entries)
+// to a streaming RAR file header. rardecode normalises '\' to '/' in entry
+// names, so the path-prefix checks match the .cbz path exactly, and the page
+// extension set (comicImageExts) is the same — keeping cbz/cbr behaviour
+// uniform.
+func isComicCbrPage(hdr *rardecode.FileHeader) bool {
+	if hdr.IsDir {
+		return false
+	}
+	name := hdr.Name
+	base := filepath.Base(name)
+	if strings.HasPrefix(name, "__MACOSX/") || strings.HasPrefix(base, "._") {
+		return false
+	}
+	_, isImg := comicImageExts[strings.ToLower(filepath.Ext(name))]
+	return isImg
+}
+
+// comicCbrPageNames streams once through a .cbr (RAR) archive collecting the
+// names of its page-image entries, then sorts them into the SAME natural
+// reading order .cbz uses. RAR is a streaming format with no central
+// directory, so listing is a single forward pass over the entry headers; the
+// entry bodies are skipped (the decoder discards them), never buffered, so
+// memory stays bounded (§12.6). A genuinely undecodable entry header surfaces
+// as an honest error rather than a crash (§11.4.1).
+func comicCbrPageNames(ra io.ReaderAt, size int64) ([]string, error) {
+	rr, err := rardecode.NewReader(io.NewSectionReader(ra, 0, size))
+	if err != nil {
+		return nil, fmt.Errorf("open comic rar: %w", err)
+	}
+	var names []string
+	for {
+		hdr, nerr := rr.Next()
+		if nerr == io.EOF {
+			break
+		}
+		if nerr != nil {
+			return nil, fmt.Errorf("read comic rar entry: %w", nerr)
+		}
+		if isComicCbrPage(hdr) {
+			names = append(names, hdr.Name)
+		}
+	}
+	sort.SliceStable(names, func(i, j int) bool {
+		return naturalLess(names[i], names[j])
+	})
+	return names, nil
+}
+
 // naturalLess compares two strings so that embedded digit runs are
 // ordered numerically ("page2.png" < "page10.png"), giving correct
 // comic page ordering even when filenames are not zero-padded.
@@ -403,19 +480,20 @@ func isDigit(b byte) bool { return b >= '0' && b <= '9' }
 
 // ListComicPages handles GET /api/v1/entities/:id/pages.
 //
-// It opens the entity's resolved .cbz archive over its storage protocol,
+// It opens the entity's resolved comic archive over its storage protocol,
 // lists its image page entries in natural order, and returns:
 //
 //	{"total_pages": N, "pages": [{"index": 0, "name": "001.png"}, ...]}
 //
-// For .cbr archives it returns 501 with {"error":"cbr not yet supported"}.
+// Both .cbz (ZIP) and .cbr (RAR) archives are supported; the response shape is
+// identical for both.
 func (h *ComicPagesHandler) ListComicPages(c *gin.Context) {
 	sf, ok := h.resolveArchive(c)
 	if !ok {
 		return
 	}
 	if isCBR(sf.Path) {
-		c.JSON(http.StatusNotImplemented, gin.H{"error": "cbr not yet supported"})
+		h.listCBRPages(c, sf)
 		return
 	}
 
@@ -439,13 +517,13 @@ func (h *ComicPagesHandler) ListComicPages(c *gin.Context) {
 
 // GetComicPage handles GET /api/v1/entities/:id/pages/:n.
 //
-// It extracts the single 0-based page n from the entity's .cbz archive
+// It extracts the single 0-based page n from the entity's comic archive
 // (opened over its storage protocol) and streams its image bytes with the
-// correct Content-Type. Only the requested entry is opened and streamed —
-// the archive is never fully extracted, so memory stays bounded to one
-// page (and, on SMB/local, only that page's bytes cross the network).
+// correct Content-Type. Only the requested entry is read out, so memory stays
+// bounded to one page (and, for .cbz on SMB/local, only that page's bytes
+// cross the network; .cbr is a streaming format — see getCBRPage).
 //
-// For .cbr archives it returns 501 with {"error":"cbr not yet supported"}.
+// Both .cbz (ZIP) and .cbr (RAR) archives are supported.
 func (h *ComicPagesHandler) GetComicPage(c *gin.Context) {
 	sf, ok := h.resolveArchive(c)
 	if !ok {
@@ -459,7 +537,7 @@ func (h *ComicPagesHandler) GetComicPage(c *gin.Context) {
 	}
 
 	if isCBR(sf.Path) {
-		c.JSON(http.StatusNotImplemented, gin.H{"error": "cbr not yet supported"})
+		h.getCBRPage(c, sf, n)
 		return
 	}
 
@@ -494,4 +572,95 @@ func (h *ComicPagesHandler) GetComicPage(c *gin.Context) {
 		rc,
 		nil,
 	)
+}
+
+// listCBRPages lists the page-image entries of a .cbr (RAR) archive over its
+// storage protocol and writes the same {"total_pages":N,"pages":[...]} shape
+// as the .cbz path.
+func (h *ComicPagesHandler) listCBRPages(c *gin.Context, sf *repository.StreamableFile) {
+	ra, size, cleanup, err := h.resolveComicReaderAt(c.Request.Context(), sf, ".cbr")
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to open comic archive", err)
+		return
+	}
+	defer cleanup()
+
+	names, err := comicCbrPageNames(ra, size)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to read comic archive", err)
+		return
+	}
+
+	pages := make([]gin.H, 0, len(names))
+	for i, name := range names {
+		pages = append(pages, gin.H{"index": i, "name": name})
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"total_pages": len(names),
+		"pages":       pages,
+	})
+}
+
+// getCBRPage extracts the 0-based page n from a .cbr (RAR) archive. RAR is a
+// streaming format with no central directory, so this takes two forward
+// passes over the SAME resolved bytes (one resolution per request):
+//
+//	pass 1 — list every page entry and sort into natural reading order, to map
+//	         the 0-based n to a concrete entry name (the archive's stored order
+//	         may differ from reading order);
+//	pass 2 — a fresh forward pass to that entry, then read just that one page.
+//
+// Only the single requested page is buffered (one image — bounded memory,
+// §12.6), and it is fully read BEFORE any response body is written so a
+// genuine per-entry decode/CRC failure surfaces as an honest 500 rather than a
+// truncated 200 (§11.4.1).
+func (h *ComicPagesHandler) getCBRPage(c *gin.Context, sf *repository.StreamableFile, n int) {
+	ra, size, cleanup, err := h.resolveComicReaderAt(c.Request.Context(), sf, ".cbr")
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to open comic archive", err)
+		return
+	}
+	defer cleanup()
+
+	names, err := comicCbrPageNames(ra, size)
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to read comic archive", err)
+		return
+	}
+	if n >= len(names) {
+		utils.SendErrorResponse(c, http.StatusNotFound, "Page index out of range", nil)
+		return
+	}
+	target := names[n]
+
+	rr, err := rardecode.NewReader(io.NewSectionReader(ra, 0, size))
+	if err != nil {
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to open comic archive", err)
+		return
+	}
+	for {
+		hdr, nerr := rr.Next()
+		if nerr == io.EOF {
+			// Listed in pass 1 but absent in pass 2: the archive changed
+			// underneath us. Honest error, never a silent 200 (§11.4.1).
+			utils.SendErrorResponse(c, http.StatusInternalServerError, "Comic page not found in archive", nil)
+			return
+		}
+		if nerr != nil {
+			utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to read comic archive", nerr)
+			return
+		}
+		if hdr.Name != target {
+			continue
+		}
+		// rr reads the current entry; rardecode verifies the entry CRC at EOF,
+		// so a corrupt page yields an honest decode error (§11.4.1).
+		data, rerr := io.ReadAll(rr)
+		if rerr != nil {
+			utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to decode comic page", rerr)
+			return
+		}
+		c.Data(http.StatusOK, comicContentType(hdr.Name), data)
+		return
+	}
 }

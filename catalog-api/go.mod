@@ -93,6 +93,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/mutecomm/go-sqlcipher v0.0.0-20190227152316-55dbde17881f
+	github.com/nwaples/rardecode/v2 v2.2.5
 	github.com/odwrtw/fanarttv v0.0.0-20170412122542-9f67d3cf0188
 	github.com/pborman/uuid v1.2.1
 	github.com/prometheus/client_golang v1.23.2
