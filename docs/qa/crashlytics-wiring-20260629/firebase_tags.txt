@@ -1,0 +1,5 @@
+--------- beginning of main
+--------- beginning of system
+I/FirebaseApp( 1277): Device unlocked: initializing all Firebase APIs for app [DEFAULT]
+I/FirebaseCrashlytics( 1277): Initializing Firebase Crashlytics 18.6.0 for com.catalogizer.androidtv
+I/FirebaseCrashlytics( 1277): No version control information found

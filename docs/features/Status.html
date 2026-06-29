@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Feature Status — Catalogizer</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Feature Status — Catalogizer</h1>
+</header>
+<h1 id="feature-status-catalogizer">Feature Status — Catalogizer</h1>
+<blockquote>
+<p>Comprehensive per-feature status document per Constitution
+<strong>§11.4.153</strong>. Every component, client-app, and feature
+enumerated with validation state and video-recording confirmation.</p>
+</blockquote>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-29T10:00:00Z</p>
+<h2 id="system-overview">System Overview</h2>
+<table>
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 22%" />
+<col style="width: 25%" />
+<col style="width: 22%" />
+</colgroup>
+<thead>
+<tr>
+<th>Component</th>
+<th>Status</th>
+<th>Version</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>catalog-api</strong></td>
+<td>Running</td>
+<td>v2.4.0</td>
+<td>Port 28080, SQLite, identity loaded</td>
+</tr>
+<tr>
+<td><strong>catalog-web</strong></td>
+<td>Running</td>
+<td>—</td>
+<td>Port 3000, React TypeScript</td>
+</tr>
+<tr>
+<td><strong>Android TV</strong></td>
+<td>Running</td>
+<td>v2.4.0</td>
+<td>192.168.0.214:5555, Firebase Crashlytics active</td>
+</tr>
+<tr>
+<td><strong>NAS DATA8 scan</strong></td>
+<td>Completed</td>
+<td>—</td>
+<td>119,000 files indexed</td>
+</tr>
+<tr>
+<td><strong>NAS music</strong></td>
+<td>Access denied</td>
+<td>—</td>
+<td>Requires credentials update</td>
+</tr>
+<tr>
+<td><strong>NAS usbshare2</strong></td>
+<td>Access denied</td>
+<td>—</td>
+<td>Requires credentials update</td>
+</tr>
+</tbody>
+</table>
+<h2 id="feature-matrix">Feature Matrix</h2>
+<h3 id="backend-catalog-api">Backend — catalog-api</h3>
+<table>
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 14%" />
+<col style="width: 22%" />
+<col style="width: 11%" />
+<col style="width: 10%" />
+<col style="width: 17%" />
+<col style="width: 10%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation</th>
+<th>Wiring</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SMB multi-share scanning</td>
+<td>Core</td>
+<td>Done</td>
+<td>Done</td>
+<td>44/44 Go tests</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Firebase crash reporting</td>
+<td>Observability</td>
+<td>Done</td>
+<td>Done</td>
+<td>Regression guard</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Firebase Analytics</td>
+<td>Observability</td>
+<td>Done</td>
+<td>Done</td>
+<td>Integration</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Media entity CRUD</td>
+<td>API</td>
+<td>Done</td>
+<td>Done</td>
+<td>New tests added</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Service handlers</td>
+<td>API</td>
+<td>Done</td>
+<td>Done</td>
+<td>New tests added</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Binding ingester</td>
+<td>Core</td>
+<td>Fixed</td>
+<td>Done</td>
+<td>Updated tests</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Enrichment async</td>
+<td>Core</td>
+<td>Fixed</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Favorites 409 conflict</td>
+<td>API</td>
+<td>Fixed</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Scan error reporting</td>
+<td>Core</td>
+<td>Fixed</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Identity management</td>
+<td>Auth</td>
+<td>Done</td>
+<td>Done</td>
+<td>Extended tests</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>WebSocket bridge</td>
+<td>Realtime</td>
+<td>Done</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Event bus bridge</td>
+<td>Core</td>
+<td>Done</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Security scanning</td>
+<td>Security</td>
+<td>Done</td>
+<td>—</td>
+<td>gosec + govulncheck + npm-audit + Snyk</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>SQLCipher encrypted DB</td>
+<td>Storage</td>
+<td>Done</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>External metadata (TMDB/IMDB/etc)</td>
+<td>Enrichment</td>
+<td>Done</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="frontend-catalog-web">Frontend — catalog-web</h3>
+<table>
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 14%" />
+<col style="width: 22%" />
+<col style="width: 11%" />
+<col style="width: 10%" />
+<col style="width: 17%" />
+<col style="width: 10%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation</th>
+<th>Wiring</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Media browser</td>
+<td>UI</td>
+<td>Done</td>
+<td>Done</td>
+<td>2398/2398 web tests</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Entity cards</td>
+<td>UI</td>
+<td>Done</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Media detail modal</td>
+<td>UI</td>
+<td>Done</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Media filters</td>
+<td>UI</td>
+<td>Done</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Analytics dashboard</td>
+<td>UI</td>
+<td>Done</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Playlists</td>
+<td>UI</td>
+<td>Done</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Subtitle manager</td>
+<td>UI</td>
+<td>Done</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Identity manager</td>
+<td>UI</td>
+<td>Done</td>
+<td>Done</td>
+<td>Extended tests</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Discovered shares</td>
+<td>UI</td>
+<td>Fixed</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>TypeScript type fixes</td>
+<td>Build</td>
+<td>Done</td>
+<td>Done</td>
+<td>Lint clean</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>WCAG contrast tests</td>
+<td>Accessibility</td>
+<td>Done</td>
+<td>Done</td>
+<td>Tests pass</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="android-tv">Android TV</h3>
+<table>
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 14%" />
+<col style="width: 22%" />
+<col style="width: 11%" />
+<col style="width: 10%" />
+<col style="width: 17%" />
+<col style="width: 10%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation</th>
+<th>Wiring</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Firebase Crashlytics</td>
+<td>Observability</td>
+<td>Done</td>
+<td>Done</td>
+<td>UI toggle + test button</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Firebase Analytics</td>
+<td>Observability</td>
+<td>Done</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>MediaCardLayout</td>
+<td>UI</td>
+<td>Done</td>
+<td>Done</td>
+<td>1/1 instr. test</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Leanback D-pad nav</td>
+<td>UI</td>
+<td>Done</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h3 id="infrastructure">Infrastructure</h3>
+<table>
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 14%" />
+<col style="width: 22%" />
+<col style="width: 11%" />
+<col style="width: 10%" />
+<col style="width: 17%" />
+<col style="width: 10%" />
+</colgroup>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Category</th>
+<th>Implementation</th>
+<th>Wiring</th>
+<th>Tests</th>
+<th>Validation</th>
+<th>Video</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Docker compose dev</td>
+<td>DevOps</td>
+<td>Updated</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Git LFS tracking</td>
+<td>Build</td>
+<td>Done</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Submodule structure</td>
+<td>Architecture</td>
+<td>Restructured</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>.gitignore hardening</td>
+<td>Hygiene</td>
+<td>Extended</td>
+<td>Done</td>
+<td>—</td>
+<td>PASS</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h2 id="test-coverage-summary">Test Coverage Summary</h2>
+<table>
+<thead>
+<tr>
+<th>Test Type</th>
+<th>Count</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Go unit/integration</td>
+<td>44/44</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>Web unit/integration</td>
+<td>2398/2398</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>AndroidTV instrumented</td>
+<td>1/1</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>Memory submodule</td>
+<td>10/10</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td>Security scans</td>
+<td>4 tools</td>
+<td>PASS (no critical)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="known-issues">Known Issues</h2>
+<table>
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 34%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Issue</th>
+<th>Status</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>music SMB share access denied</td>
+<td>Open</td>
+<td>Requires CATALOGIZER_IDENTITY credentials update</td>
+</tr>
+<tr>
+<td>usbshare2 SMB share access denied</td>
+<td>Open</td>
+<td>Requires CATALOGIZER_IDENTITY credentials update</td>
+</tr>
+<tr>
+<td>Firebase service account for backend Crashlytics API</td>
+<td>Pending</td>
+<td>Console access only, no server-side API</td>
+</tr>
+</tbody>
+</table>
+<h2 id="submodule-structure-post-restructuring">Submodule Structure
+(post-restructuring)</h2>
+<p>All submodules moved to <code>submodules/</code> with snake_case
+naming:</p>
+<ul>
+<li><code>submodules/helix_qa</code> — HelixQA test framework</li>
+<li><code>submodules/ui_components_react</code> — React UI
+components</li>
+<li><code>submodules/constitution</code> — Constitution rules</li>
+<li>Plus 21 Go modules and 2 TypeScript modules (see README.md)</li>
+</ul>
+</body>
+</html>

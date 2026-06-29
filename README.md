@@ -751,6 +751,15 @@ docker exec catalogizer-server tail -f /app/logs/catalogizer.log
 - **[Build System](docs/BUILD_SYSTEM.md)**: Release build system with versioning
 - **[Troubleshooting](docs/guides/TROUBLESHOOTING.md)**: Common issues and solutions
 
+<!-- doc-link-section:begin -->
+## Tracked-Items + Status Documents
+
+| Document | Last modified | Revision | Markdown | HTML | PDF |
+|----------|---------------|----------|----------|------|-----|
+| CONTINUATION.md | 2026-06-29T10:00:00Z | 7 | [MD](docs/CONTINUATION.md) | — | — |
+| Feature Status | 2026-06-29T10:00:00Z | 1 | [MD](docs/features/Status.md) | — | — |
+<!-- doc-link-section:end -->
+
 ## 🆘 Support & Troubleshooting
 
 ### Common Issues

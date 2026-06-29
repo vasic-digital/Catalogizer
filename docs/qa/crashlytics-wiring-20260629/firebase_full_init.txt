@@ -1,0 +1,8 @@
+--------- beginning of main
+--------- beginning of system
+06-29 11:38:22.141 I/FirebaseApp( 1379): Device unlocked: initializing all Firebase APIs for app [DEFAULT]
+06-29 11:38:22.666 D/FirebaseSessions( 1379): Initializing Firebase Sessions SDK.
+06-29 11:38:22.685 I/FirebaseCrashlytics( 1379): Initializing Firebase Crashlytics 18.6.0 for com.catalogizer.androidtv
+06-29 11:38:22.823 D/FirebaseSessions( 1379): No Sessions subscribers. Not listening to lifecycle events.
+06-29 11:38:23.207 I/FirebaseCrashlytics( 1379): No version control information found
+06-29 11:38:23.311 I/FirebaseInitProvider( 1379): FirebaseApp initialization successful
