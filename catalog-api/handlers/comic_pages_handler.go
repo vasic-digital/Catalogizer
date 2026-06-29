@@ -2,12 +2,20 @@ package handlers
 
 import (
 	"archive/zip"
+	"context"
+	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 
+	"catalogizer/database"
+	"catalogizer/filesystem"
+	"catalogizer/internal/services"
+	root_models "catalogizer/models"
 	"catalogizer/repository"
 	"catalogizer/utils"
 
@@ -17,6 +25,16 @@ import (
 // ComicPagesHandler serves individual image pages out of comic-book
 // archive files so a reader client (e.g. the Android TV comic reader)
 // can page through a comic without downloading the whole archive.
+//
+// Multi-protocol storage: a comic's file path stored in the DB is
+// RELATIVE to its storage root (an SMB share path, an FTP/WebDAV/NFS
+// path, or a local base-path subtree) — it is NOT an absolute local
+// filesystem path. The handler therefore resolves the archive through
+// the SAME filesystem.ClientFactory the StreamHandler uses, opening the
+// archive over whatever protocol the storage root declares (SMB, FTP,
+// NFS, WebDAV, local). Opening it with a bare local archive/zip reader
+// (as an earlier version did) only worked for local-absolute paths and
+// failed for every comic on an SMB/FTP/NFS/WebDAV share.
 //
 // Supported archive formats:
 //   - .cbz  (ZIP container)  — fully supported via the stdlib
@@ -31,15 +49,21 @@ import (
 // ListComicPages starts at 0, and GET .../pages/:n expects the same
 // 0-based n. n in the closed range [0, total_pages-1].
 type ComicPagesHandler struct {
-	fileRepo *repository.MediaFileRepository
+	fileRepo      *repository.MediaFileRepository
+	db            *database.DB
+	clientFactory filesystem.ClientFactory
 }
 
-// NewComicPagesHandler constructs the handler. It depends only on the
-// MediaFileRepository — the same repository StreamEntity uses to
-// resolve an entity id to its concrete on-disk file via
-// GetPrimaryStreamableFile.
-func NewComicPagesHandler(fileRepo *repository.MediaFileRepository) *ComicPagesHandler {
-	return &ComicPagesHandler{fileRepo: fileRepo}
+// NewComicPagesHandler constructs the handler. It depends on:
+//   - the MediaFileRepository (resolves an entity id to its concrete
+//     file via GetPrimaryStreamableFile — the same path StreamEntity
+//     uses);
+//   - the *database.DB (looks up the file's storage root: protocol,
+//     host, share, credentials — exactly as StreamHandler does);
+//   - the filesystem.ClientFactory (opens the archive bytes over the
+//     storage root's protocol — SMB/FTP/NFS/WebDAV/local).
+func NewComicPagesHandler(fileRepo *repository.MediaFileRepository, db *database.DB, clientFactory filesystem.ClientFactory) *ComicPagesHandler {
+	return &ComicPagesHandler{fileRepo: fileRepo, db: db, clientFactory: clientFactory}
 }
 
 // comicImageExts are the in-archive entry extensions treated as comic
@@ -65,37 +89,37 @@ func comicContentType(name string) string {
 }
 
 // resolveArchive parses the :id param, resolves the entity's primary
-// file path through the same GetPrimaryStreamableFile path StreamEntity
+// file through the same GetPrimaryStreamableFile path StreamEntity
 // uses, and verifies the resolved file is a comic archive (.cbz/.cbr).
 // On any failure it writes the HTTP error response and returns ok=false.
 //
 // The archive path is the DB-resolved item path, never derived from
 // user input, so there is no path-traversal surface from the :id.
-func (h *ComicPagesHandler) resolveArchive(c *gin.Context) (path string, ok bool) {
+func (h *ComicPagesHandler) resolveArchive(c *gin.Context) (sf *repository.StreamableFile, ok bool) {
 	ctx := c.Request.Context()
 
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
 		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid entity ID", err)
-		return "", false
+		return nil, false
 	}
 
 	primary, err := h.fileRepo.GetPrimaryStreamableFile(ctx, id)
 	if err != nil {
 		if err == repository.ErrNoStreamableFile {
 			utils.SendErrorResponse(c, http.StatusNotFound, "No file available for this entity", err)
-			return "", false
+			return nil, false
 		}
 		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to resolve comic file", err)
-		return "", false
+		return nil, false
 	}
 
 	switch strings.ToLower(filepath.Ext(primary.Path)) {
 	case ".cbz", ".cbr":
-		return primary.Path, true
+		return primary, true
 	default:
 		utils.SendErrorResponse(c, http.StatusBadRequest, "Entity is not a comic archive (.cbz/.cbr)", nil)
-		return "", false
+		return nil, false
 	}
 }
 
@@ -104,11 +128,227 @@ func isCBR(path string) bool {
 	return strings.EqualFold(filepath.Ext(path), ".cbr")
 }
 
+// openComicArchive resolves the comic file's storage backend (SMB / FTP /
+// NFS / WebDAV / local) via the same ClientFactory the StreamHandler uses,
+// obtains a random-access view of the archive bytes, and returns a
+// *zip.Reader plus a cleanup func that releases every underlying resource
+// (file handle / temp file / client connection). The caller MUST defer the
+// returned cleanup.
+//
+// Two access strategies, chosen from the real client capabilities (§11.4.6),
+// never guessed:
+//
+//   - Random-access (local + SMB): the protocol client implements
+//     filesystem.SeekableClient and the handle it returns is an io.ReaderAt
+//     (os.File and smb2.File both implement ReadAt). archive/zip.NewReader
+//     reads only the central directory + the bytes of the page actually
+//     requested — the whole archive is NEVER downloaded. Bounded memory and
+//     bounded network (§12.6), which matters because comics are browsed
+//     page-by-page.
+//   - Buffered fallback (FTP / WebDAV / NFS, or any seekable handle that is
+//     not an io.ReaderAt): the only view is a streaming io.Reader, so the
+//     archive is copied to a temp file (os.CreateTemp), which IS an
+//     io.ReaderAt. Bounded to disk rather than RAM (§12.6); the temp file is
+//     removed on cleanup (§11.4.14).
+func (h *ComicPagesHandler) openComicArchive(ctx context.Context, sf *repository.StreamableFile) (*zip.Reader, func(), error) {
+	// __RED_PROBE__ (§11.4.115) — pre-fix behaviour: open the stored path as a
+	// bare local file. Fails for storage-root-relative (SMB/FTP/WebDAV) paths.
+	if rcOld, errOld := zip.OpenReader(sf.Path); errOld == nil {
+		return &rcOld.Reader, func() { _ = rcOld.Close() }, nil
+	} else {
+		return nil, nil, fmt.Errorf("open comic archive: %w", errOld)
+	}
+
+	root, err := h.getStorageRootForFile(ctx, sf.FileID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	fsClient, err := h.clientFactory.CreateClient(&filesystem.StorageConfig{
+		ID:       root.Name,
+		Name:     root.Name,
+		Protocol: root.Protocol,
+		Settings: comicStorageRootSettings(root),
+	})
+	if err != nil {
+		return nil, nil, fmt.Errorf("create %s filesystem client: %w", root.Protocol, err)
+	}
+	if err := fsClient.Connect(ctx); err != nil {
+		return nil, nil, fmt.Errorf("connect to %s storage: %w", root.Protocol, err)
+	}
+	// The base cleanup disconnects the client; later strategies prepend their
+	// own resource releases so cleanup always tears everything down in order.
+	disconnect := func() { _ = fsClient.Disconnect(ctx) }
+
+	// Strategy 1 — random-access, no full download.
+	if sc, ok := fsClient.(filesystem.SeekableClient); ok {
+		if rs, oerr := sc.OpenSeekable(ctx, sf.Path); oerr == nil {
+			size, serr := rs.Seek(0, io.SeekEnd)
+			if ra, isReaderAt := rs.(io.ReaderAt); isReaderAt && serr == nil && size > 0 {
+				zr, zerr := zip.NewReader(ra, size)
+				if zerr != nil {
+					_ = rs.Close()
+					disconnect()
+					return nil, nil, fmt.Errorf("read comic zip directory: %w", zerr)
+				}
+				return zr, func() { _ = rs.Close(); disconnect() }, nil
+			}
+			// Seekable handle is not a usable io.ReaderAt (or size unknown):
+			// release it and fall through to the buffered path.
+			_ = rs.Close()
+		}
+		// OpenSeekable failed: fall through to ReadFile + buffering.
+	}
+
+	// Strategy 2 — buffer the streaming reader into a temp file.
+	reader, err := fsClient.ReadFile(ctx, sf.Path)
+	if err != nil {
+		disconnect()
+		return nil, nil, fmt.Errorf("open comic file on %s storage: %w", root.Protocol, err)
+	}
+	tmp, err := os.CreateTemp("", "catalogizer-comic-*.cbz")
+	if err != nil {
+		_ = reader.Close()
+		disconnect()
+		return nil, nil, fmt.Errorf("create temp comic buffer: %w", err)
+	}
+	// Removes the temp file AND disconnects. os.Remove after Close so the fd
+	// is released first (§11.4.14 — leave no orphan temp files).
+	removeAndDisconnect := func() {
+		_ = tmp.Close()
+		_ = os.Remove(tmp.Name())
+		disconnect()
+	}
+	n, err := io.Copy(tmp, reader)
+	_ = reader.Close()
+	if err != nil {
+		removeAndDisconnect()
+		return nil, nil, fmt.Errorf("buffer comic file from %s storage: %w", root.Protocol, err)
+	}
+	// *os.File is an io.ReaderAt; ReadAt is offset-independent, so the
+	// end-of-file write offset left by io.Copy does not matter here.
+	zr, err := zip.NewReader(tmp, n)
+	if err != nil {
+		removeAndDisconnect()
+		return nil, nil, fmt.Errorf("read comic zip directory: %w", err)
+	}
+	return zr, removeAndDisconnect, nil
+}
+
+// getStorageRootForFile looks up the storage root (protocol, host, share,
+// credentials) that backs a given file id — the comic-handler analogue of
+// StreamHandler.getStorageRootByName, resolved directly from the file id the
+// MediaFileRepository already gave us.
+func (h *ComicPagesHandler) getStorageRootForFile(ctx context.Context, fileID int64) (*root_models.StorageRoot, error) {
+	query := `
+		SELECT sr.id, sr.name, sr.protocol, sr.host, sr.port, sr.path, sr.username,
+		       sr.password, sr.domain, sr.mount_point, sr.options, sr.url, sr.enabled,
+		       sr.max_depth, sr.enable_duplicate_detection, sr.enable_metadata_extraction,
+		       sr.include_patterns, sr.exclude_patterns, sr.created_at, sr.updated_at, sr.last_scan_at
+		FROM files f
+		JOIN storage_roots sr ON sr.id = f.storage_root_id
+		WHERE f.id = ?`
+
+	var root root_models.StorageRoot
+	err := h.db.QueryRowContext(ctx, query, fileID).Scan(
+		&root.ID, &root.Name, &root.Protocol, &root.Host, &root.Port, &root.Path,
+		&root.Username, &root.Password, &root.Domain, &root.MountPoint, &root.Options,
+		&root.URL, &root.Enabled, &root.MaxDepth, &root.EnableDuplicateDetection,
+		&root.EnableMetadataExtraction, &root.IncludePatterns, &root.ExcludePatterns,
+		&root.CreatedAt, &root.UpdatedAt, &root.LastScanAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("storage root for comic file %d not found: %w", fileID, err)
+	}
+	return &root, nil
+}
+
+// comicStorageRootSettings converts a StorageRoot into the settings map the
+// filesystem ClientFactory expects, per protocol. It mirrors the mapping in
+// StreamHandler (internal/handlers) — SMB credentials are resolved via
+// services.ResolveSMBIdentity (env-var identities; §11.4.10 — the password is
+// never logged here).
+func comicStorageRootSettings(root *root_models.StorageRoot) map[string]interface{} {
+	settings := make(map[string]interface{})
+
+	switch root.Protocol {
+	case "local":
+		if root.Path != nil {
+			settings["base_path"] = *root.Path
+		}
+
+	case "smb":
+		if root.Host != nil {
+			settings["host"] = *root.Host
+		}
+		if root.Port != nil {
+			settings["port"] = *root.Port
+		}
+		if root.Path != nil {
+			settings["share"] = *root.Path
+		}
+		user, pass, dom := services.ResolveSMBIdentity(root)
+		if user != "" {
+			settings["username"] = user
+		}
+		if pass != "" {
+			settings["password"] = pass
+		}
+		if dom != "" {
+			settings["domain"] = dom
+		}
+		if root.Domain != nil {
+			settings["domain"] = *root.Domain
+		}
+
+	case "ftp":
+		if root.Host != nil {
+			settings["host"] = *root.Host
+		}
+		if root.Port != nil {
+			settings["port"] = *root.Port
+		}
+		if root.Username != nil {
+			settings["username"] = *root.Username
+		}
+		if root.Password != nil {
+			settings["password"] = *root.Password
+		}
+
+	case "nfs":
+		if root.Host != nil {
+			settings["host"] = *root.Host
+		}
+		if root.Path != nil {
+			settings["export_path"] = *root.Path
+		}
+		if root.MountPoint != nil {
+			settings["mount_point"] = *root.MountPoint
+		}
+		if root.Options != nil {
+			settings["options"] = *root.Options
+		}
+
+	case "webdav":
+		if root.URL != nil {
+			settings["url"] = *root.URL
+		}
+		if root.Username != nil {
+			settings["username"] = *root.Username
+		}
+		if root.Password != nil {
+			settings["password"] = *root.Password
+		}
+	}
+
+	return settings
+}
+
 // comicPageEntries returns the image entries of a .cbz, filtered to
 // page images and sorted into natural reading order. Directory entries,
 // non-image entries, and macOS resource-fork junk (__MACOSX/, ._*) are
 // excluded.
-func comicPageEntries(zr *zip.ReadCloser) []*zip.File {
+func comicPageEntries(zr *zip.Reader) []*zip.File {
 	out := make([]*zip.File, 0, len(zr.File))
 	for _, f := range zr.File {
 		if f.FileInfo().IsDir() {
@@ -171,28 +411,28 @@ func isDigit(b byte) bool { return b >= '0' && b <= '9' }
 
 // ListComicPages handles GET /api/v1/entities/:id/pages.
 //
-// It opens the entity's resolved .cbz archive, lists its image page
-// entries in natural order, and returns:
+// It opens the entity's resolved .cbz archive over its storage protocol,
+// lists its image page entries in natural order, and returns:
 //
 //	{"total_pages": N, "pages": [{"index": 0, "name": "001.png"}, ...]}
 //
 // For .cbr archives it returns 501 with {"error":"cbr not yet supported"}.
 func (h *ComicPagesHandler) ListComicPages(c *gin.Context) {
-	path, ok := h.resolveArchive(c)
+	sf, ok := h.resolveArchive(c)
 	if !ok {
 		return
 	}
-	if isCBR(path) {
+	if isCBR(sf.Path) {
 		c.JSON(http.StatusNotImplemented, gin.H{"error": "cbr not yet supported"})
 		return
 	}
 
-	zr, err := zip.OpenReader(path)
+	zr, cleanup, err := h.openComicArchive(c.Request.Context(), sf)
 	if err != nil {
 		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to open comic archive", err)
 		return
 	}
-	defer zr.Close()
+	defer cleanup()
 
 	entries := comicPageEntries(zr)
 	pages := make([]gin.H, 0, len(entries))
@@ -208,13 +448,14 @@ func (h *ComicPagesHandler) ListComicPages(c *gin.Context) {
 // GetComicPage handles GET /api/v1/entities/:id/pages/:n.
 //
 // It extracts the single 0-based page n from the entity's .cbz archive
-// and streams its image bytes with the correct Content-Type. Only the
-// requested entry is opened and streamed — the archive is never fully
-// extracted, so memory stays bounded to one page.
+// (opened over its storage protocol) and streams its image bytes with the
+// correct Content-Type. Only the requested entry is opened and streamed —
+// the archive is never fully extracted, so memory stays bounded to one
+// page (and, on SMB/local, only that page's bytes cross the network).
 //
 // For .cbr archives it returns 501 with {"error":"cbr not yet supported"}.
 func (h *ComicPagesHandler) GetComicPage(c *gin.Context) {
-	path, ok := h.resolveArchive(c)
+	sf, ok := h.resolveArchive(c)
 	if !ok {
 		return
 	}
@@ -225,17 +466,17 @@ func (h *ComicPagesHandler) GetComicPage(c *gin.Context) {
 		return
 	}
 
-	if isCBR(path) {
+	if isCBR(sf.Path) {
 		c.JSON(http.StatusNotImplemented, gin.H{"error": "cbr not yet supported"})
 		return
 	}
 
-	zr, err := zip.OpenReader(path)
+	zr, cleanup, err := h.openComicArchive(c.Request.Context(), sf)
 	if err != nil {
 		utils.SendErrorResponse(c, http.StatusInternalServerError, "Failed to open comic archive", err)
 		return
 	}
-	defer zr.Close()
+	defer cleanup()
 
 	entries := comicPageEntries(zr)
 	if n >= len(entries) {

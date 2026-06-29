@@ -751,7 +751,7 @@ func main() {
 	// Comic-pages handler: pages through .cbz/.cbr archives for the
 	// reader clients. Resolves the entity's archive file via the same
 	// MediaFileRepository StreamEntity uses.
-	comicPagesHandler := root_handlers.NewComicPagesHandler(mediaFileRepo)
+	comicPagesHandler := root_handlers.NewComicPagesHandler(mediaFileRepo, databaseDB, clientFactory)
 
 	// Media entity handler for structured media browsing
 	mediaEntityHandler := root_handlers.NewMediaEntityHandler(mediaItemRepo, mediaFileRepo, extMetaRepo, userMetaRepo, databaseDB)
