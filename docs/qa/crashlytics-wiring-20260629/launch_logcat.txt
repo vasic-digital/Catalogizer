@@ -1,0 +1,302 @@
+--------- beginning of main
+06-29 11:37:00.368 E/MesonHwc( 3022): mi version
+06-29 11:37:00.370 D/MiTv-Service-TvService-Parent( 3804): current foreground packagename is com.google.android.tvlauncher
+06-29 11:37:00.370 D/MiTv-Service-TvService( 3804): sendFloatingFrameBroadcast action is :  2  retailMode is : -1
+06-29 11:37:00.371 I/MitvPolicyDatabaseManager( 3804): updatePackageUsage com.catalogizer.androidtv/com.catalogizer.androidtv.ui.MainActivity (1,0,0)
+06-29 11:37:00.378 I/[Gralloc]( 3020): framebuffer hal alread move to hwcomposer
+06-29 11:37:00.382 W/libprocessgroup( 3202): kill(-30361, 9) failed: No such process
+06-29 11:37:00.385 E/MiTv-Utils( 3804): isTvProductFromCharacters character = default, isBox = false hastv = false
+06-29 11:37:00.409 W/roid.tvlaunche( 1017): JIT profile information will not be recorded: profile file does not exits.
+06-29 11:37:00.409 W/roid.tvlaunche( 1017): JIT profile information will not be recorded: profile file does not exits.
+06-29 11:37:00.425 W/libprocessgroup( 3202): kill(-30361, 9) failed: No such process
+--------- beginning of system
+06-29 11:37:00.429 W/ActivityManager( 3202): setHasOverlayUi called on unknown pid: 30361
+06-29 11:37:00.436 I/Zygote  ( 3003): Process 30361 exited due to signal (9)
+06-29 11:37:00.468 W/libprocessgroup( 3202): kill(-30361, 9) failed: No such process
+06-29 11:37:00.469 I/libprocessgroup( 3202): Successfully killed process cgroup uid 10134 pid 30361 in 220ms
+06-29 11:37:00.499 I/ActivityManager( 3202): START u0 {flg=0x10000000 cmp=com.catalogizer.androidtv/.ui.MainActivity} from uid 2000
+06-29 11:37:00.501 E/MesonHwc( 3022): mi version
+06-29 11:37:00.503 E/MesonHwc( 3022): mi version
+06-29 11:37:00.506 I/chatty  ( 3022): uid=1000(system) HwBinder:3022_3 identical 1 line
+06-29 11:37:00.514 E/MesonHwc( 3022): mi version
+06-29 11:37:00.518 D/PowerManagerService( 3202): updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+06-29 11:37:00.519 I/MitvPolicyDatabaseManager( 3804): updatePackageUsage com.google.android.tvlauncher/com.google.android.tvlauncher.MainActivity (0,1,0)
+06-29 11:37:00.535 W/THVM    ( 1017): AppVisibilityMonitor should not be null
+06-29 11:37:00.536 E/MesonHwc( 3022): mi version
+06-29 11:37:00.547 E/MesonHwc( 3022): mi version
+06-29 11:37:00.558 I/[Gralloc]( 3020): framebuffer hal alread move to hwcomposer
+06-29 11:37:00.601 D/BoundBrokerSvc(32497): onBind: Intent { act=com.google.android.gms.presencemanager.service.PRESENCE_REPORT dat=chimera-action: cmp=com.google.android.gms/.chimera.PersistentApiService }
+06-29 11:37:00.601 D/BoundBrokerSvc(32497): Loading bound service for intent: Intent { act=com.google.android.gms.presencemanager.service.PRESENCE_REPORT dat=chimera-action: cmp=com.google.android.gms/.chimera.PersistentApiService }
+06-29 11:37:00.631 D/BoundBrokerSvc(32483): onBind: Intent { act=com.google.android.mobstore.service.START pkg=com.google.android.gms }
+06-29 11:37:00.632 D/BoundBrokerSvc(32483): Loading bound service for intent: Intent { act=com.google.android.mobstore.service.START pkg=com.google.android.gms }
+06-29 11:37:00.634 D/BoundBrokerSvc(32497): onBind: Intent { act=com.google.android.gms.pseudonymous.service.START pkg=com.google.android.gms }
+06-29 11:37:00.634 D/BoundBrokerSvc(32497): Loading bound service for intent: Intent { act=com.google.android.gms.pseudonymous.service.START pkg=com.google.android.gms }
+06-29 11:37:00.668 D/BoundBrokerSvc(32483): onBind: Intent { act=com.google.android.gms.mdisync.service.START dat=chimera-action: cmp=com.google.android.gms/.chimera.GmsApiService }
+06-29 11:37:00.668 D/BoundBrokerSvc(32483): Loading bound service for intent: Intent { act=com.google.android.gms.mdisync.service.START dat=chimera-action: cmp=com.google.android.gms/.chimera.GmsApiService }
+06-29 11:37:00.699 W/A2F     ( 1017): Attempting CleanUp
+06-29 11:37:00.743 E/WifiVendorHal( 3202): getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+06-29 11:37:00.941 D/NetworkSecurityConfig( 1017): No Network Security Config specified, using platform default
+06-29 11:37:00.950 D/BoundBrokerSvc(32483): onBind: Intent { act=com.google.android.gms.auth.service.START pkg=com.google.android.gms }
+06-29 11:37:00.950 D/BoundBrokerSvc(32483): Loading bound service for intent: Intent { act=com.google.android.gms.auth.service.START pkg=com.google.android.gms }
+06-29 11:37:00.987 D/BoundBrokerSvc(32497): onBind: Intent { act=com.google.android.gms.facs.cache.service.START pkg=com.google.android.gms }
+06-29 11:37:00.987 D/BoundBrokerSvc(32497): Loading bound service for intent: Intent { act=com.google.android.gms.facs.cache.service.START pkg=com.google.android.gms }
+06-29 11:37:01.019 W/ActivityManager( 3202): Activity pause timeout for ActivityRecord{3a295ee u0 com.google.android.tvlauncher/.MainActivity t712}
+06-29 11:37:01.044 W/ComponentDiscovery( 1017): Class com.google.firebase.installations.FirebaseInstallationsKtxRegistrar is not an found.
+06-29 11:37:01.048 I/ActivityManager( 3202): Start proc 1089:com.catalogizer.androidtv/u0a134 for activity com.catalogizer.androidtv/.ui.MainActivity
+06-29 11:37:01.062 I/gizer.androidt( 1089): Late-enabling -Xcheck:jni
+06-29 11:37:01.113 W/gizer.androidt( 1089): Using default instruction set features for ARM CPU variant (cortex-a9) using conservative defaults
+06-29 11:37:01.122 W/Glide   ( 1017): Failed to find GeneratedAppGlideModule. You should include an annotationProcessor compile dependency on com.github.bumptech.glide:compiler in your application and a @GlideModule annotated AppGlideModule implementation or LibraryGlideModules will be silently ignored
+06-29 11:37:01.174 W/ContextImpl( 3804): Calling a method in the system process without a qualified user: android.app.ContextImpl.sendBroadcast:1020 android.content.ContextWrapper.sendBroadcast:449 mitv.internal.PackageUsagePolicy.handleUsageEvent:49 mitv.internal.TvServiceDefaultImpl$EventHandler.handleMessage:1892 android.os.Handler.dispatchMessage:106 
+06-29 11:37:01.180 E/MesonHwc( 3022): mi version
+06-29 11:37:01.182 D/MiTv-Service-TvService-Parent( 3804): current foreground packagename is com.catalogizer.androidtv
+06-29 11:37:01.183 I/MitvPolicyDatabaseManager( 3804): updatePackageUsage com.google.android.tvlauncher/com.google.android.tvlauncher.MainActivity (1,0,0)
+06-29 11:37:01.185 E/MiTv-Utils( 3804): isTvProductFromCharacters character = default, isBox = false hastv = false
+06-29 11:37:01.188 E/MesonHwc( 3022): mi version
+06-29 11:37:01.296 W/roid.tvlaunche( 1017): Unknown chunk type '200'.
+06-29 11:37:01.448 I/FontLog (32497): (REDACTED) Received query %s, URI %s
+06-29 11:37:01.455 I/FontLog (32497): (REDACTED) Query [%s] resolved to %s
+06-29 11:37:01.460 I/FontLog (32497): (REDACTED) Font PFD returned from cache for %s
+06-29 11:37:01.463 I/FontLog (32497): (REDACTED) Fetch %s end status %s
+06-29 11:37:01.483 I/FontLog (32497): (REDACTED) Pulling font file for id = %d, cache size = %d
+06-29 11:37:01.502 I/FontLog (32497): (REDACTED) Received query %s, URI %s
+06-29 11:37:01.503 I/FontLog (32497): (REDACTED) Query [%s] resolved to %s
+06-29 11:37:01.506 I/FontLog (32497): (REDACTED) Font PFD returned from cache for %s
+06-29 11:37:01.509 I/FontLog (32497): (REDACTED) Fetch %s end status %s
+06-29 11:37:01.516 I/FontLog (32497): (REDACTED) Pulling font file for id = %d, cache size = %d
+06-29 11:37:01.595 W/SurfaceFlinger( 3034): Attempting to set client state on removed layer: Splash Screen com.google.android.tvlauncher#0
+06-29 11:37:01.595 W/SurfaceFlinger( 3034): Attempting to destroy on removed layer: Splash Screen com.google.android.tvlauncher#0
+06-29 11:37:01.619 W/WindowManager( 3202): Failed looking up window callers=com.android.server.wm.WindowManagerService.windowForClientLocked:5525 com.android.server.wm.WindowManagerService.removeWindow:1654 com.android.server.wm.Session.remove:226 
+06-29 11:37:01.666 D/ConnectivityService( 3202): requestNetwork for uid/pid:10029/1017 NetworkRequest [ TRACK_DEFAULT id=398, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10029] ]
+06-29 11:37:01.667 D/WIFI    ( 3202): got request NetworkRequest [ TRACK_DEFAULT id=398, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10029] ] with score 60
+06-29 11:37:01.667 D/Ethernet( 3202): got request NetworkRequest [ TRACK_DEFAULT id=398, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10029] ] with score 60
+06-29 11:37:01.668 D/WIFI_UT ( 3202): got request NetworkRequest [ TRACK_DEFAULT id=398, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10029] ] with score 60
+06-29 11:37:01.702 I/roid.tvlaunche( 1017): Background concurrent copying GC freed 21452(1795KB) AllocSpace objects, 19(508KB) LOS objects, 49% free, 2MB/5MB, paused 1.158ms total 113.153ms
+06-29 11:37:01.738 W/PhoneWindow( 1017): Previously focused view reported id 2131428791 during save, but can't be found during restore.
+06-29 11:37:01.740 W/A2F     ( 1017): App Foreground
+06-29 11:37:01.747 W/A2F     ( 1017): Data Refresh start
+06-29 11:37:01.752 W/A2F     ( 1017): Attempting CleanUp
+06-29 11:37:01.760 I/ActivityManager( 3202): START u0 {flg=0x14000000 cmp=com.google.android.tvlauncher/.MainActivity (has extras)} from uid 10029
+06-29 11:37:01.770 D/lutts   ( 3821): query widget
+06-29 11:37:01.774 D/PowerManagerService( 3202): updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+06-29 11:37:01.780 I/MitvPolicyDatabaseManager( 3804): updatePackageUsage com.catalogizer.androidtv/com.catalogizer.androidtv.ui.MainActivity (0,1,0)
+06-29 11:37:01.802 W/ContextImpl( 3804): Calling a method in the system process without a qualified user: android.app.ContextImpl.sendBroadcast:1020 android.content.ContextWrapper.sendBroadcast:449 mitv.internal.PackageUsagePolicy.handleUsageEvent:49 mitv.internal.TvServiceDefaultImpl$EventHandler.handleMessage:1892 android.os.Handler.dispatchMessage:106 
+06-29 11:37:01.812 D/MiTv-Service-TvService-Parent( 3804): current foreground packagename is com.google.android.tvlauncher
+06-29 11:37:01.813 D/MiTv-Service-TvService( 3804): sendFloatingFrameBroadcast action is :  2  retailMode is : -1
+06-29 11:37:01.813 I/MitvPolicyDatabaseManager( 3804): updatePackageUsage com.catalogizer.androidtv/com.catalogizer.androidtv.ui.MainActivity (1,0,0)
+06-29 11:37:01.817 W/app_registers( 1017): Notif change register: 1
+06-29 11:37:01.818 E/MiTv-Utils( 3804): isTvProductFromCharacters character = default, isBox = false hastv = false
+06-29 11:37:01.819 W/app_registers( 1017): 3P change register: 1
+06-29 11:37:01.831 W/app_registers( 1017): Watch next change register: 1
+06-29 11:37:01.857 I/FontLog (32497): (REDACTED) Received query %s, URI %s
+06-29 11:37:01.857 I/FontLog (32497): (REDACTED) Query [%s] resolved to %s
+06-29 11:37:01.863 I/FontLog (32497): (REDACTED) Font PFD returned from cache for %s
+06-29 11:37:01.863 I/FontLog (32497): (REDACTED) Fetch %s end status %s
+06-29 11:37:01.883 I/FontLog (32497): (REDACTED) Pulling font file for id = %d, cache size = %d
+06-29 11:37:01.911 I/FontLog (32497): (REDACTED) Received query %s, URI %s
+06-29 11:37:01.911 I/FontLog (32497): (REDACTED) Query [%s] resolved to %s
+06-29 11:37:01.916 I/FontLog (32497): (REDACTED) Font PFD returned from cache for %s
+06-29 11:37:01.917 I/FontLog (32497): (REDACTED) Fetch %s end status %s
+06-29 11:37:01.936 I/FontLog (32497): (REDACTED) Pulling font file for id = %d, cache size = %d
+06-29 11:37:01.960 W/P2F     ( 1017): Visible HOME_TAB
+06-29 11:37:01.962 D/OpenGLRenderer( 1017): Skia GL Pipeline
+06-29 11:37:01.981 E/MesonHwc( 3022): mi version
+06-29 11:37:01.990 E/WindowManager( 3202): App trying to use insecure INPUT_FEATURE_NO_INPUT_CHANNEL flag. Ignoring
+06-29 11:37:01.994 E/MesonHwc( 3022): mi version
+06-29 11:37:02.006 W/app_registers( 1017): Notif change unregister: 0
+06-29 11:37:02.006 W/app_registers( 1017): 3P change unregister: 0
+06-29 11:37:02.012 W/app_registers( 1017): Watch next change unregister: 0
+06-29 11:37:02.013 W/P2B     ( 1017): Hidden HOME_TAB
+06-29 11:37:02.023 D/PowerManagerService( 3202): updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+06-29 11:37:02.051 W/app_registers( 1017): Notif change register: 1
+06-29 11:37:02.052 W/app_registers( 1017): 3P change register: 1
+06-29 11:37:02.060 W/app_registers( 1017): Watch next change register: 1
+06-29 11:37:02.061 W/P2F     ( 1017): Visible HOME_TAB
+06-29 11:37:02.072 W/app_registers( 1017): Notif change unregister: 0
+06-29 11:37:02.073 W/app_registers( 1017): 3P change unregister: 0
+06-29 11:37:02.074 W/app_registers( 1017): Watch next change unregister: 0
+06-29 11:37:02.075 W/P2B     ( 1017): Hidden HOME_TAB
+06-29 11:37:02.084 W/app_registers( 1017): Notif change register: 1
+06-29 11:37:02.086 W/app_registers( 1017): 3P change register: 1
+06-29 11:37:02.090 W/app_registers( 1017): Watch next change register: 1
+06-29 11:37:02.097 W/P2F     ( 1017): Visible HOME_TAB
+06-29 11:37:02.106 E/Clearcut-EventLogger( 1017): Unexpected log parameter notification_indicator_total
+06-29 11:37:02.152 W/NotificationsChannelRep( 1017): Error while getting notifications for home page
+06-29 11:37:02.152 W/NotificationsChannelRep( 1017): pwe: pwz was cancelled; job=pwz{Cancelling}@bd44780
+06-29 11:37:02.194 I/MdiSyncModule(32483): (REDACTED) Receiving API connection from package '%s'...
+06-29 11:37:02.203 E/MesonHwc( 3022): mi version
+06-29 11:37:02.204 I/MdiSyncModule(32483): API connection successful!
+06-29 11:37:02.225 I/ConfigStore( 1017): android::hardware::configstore::V1_0::ISurfaceFlingerConfigs::hasWideColorDisplay retrieved: 0
+06-29 11:37:02.228 W/roid.tvlaunche( 1017): Unknown chunk type '200'.
+06-29 11:37:02.228 I/ConfigStore( 1017): android::hardware::configstore::V1_0::ISurfaceFlingerConfigs::hasHDRDisplay retrieved: 0
+06-29 11:37:02.229 I/OpenGLRenderer( 1017): Initialized EGL, version 1.4
+06-29 11:37:02.229 D/OpenGLRenderer( 1017): Swap behavior 1
+06-29 11:37:02.239 E/MesonHwc( 3022): mi version
+06-29 11:37:02.257 I/FacsCacheGmsModule(32497): (REDACTED) Receiving API connection to FACS API from package '%s'...
+06-29 11:37:02.263 I/[Gralloc]( 3020): framebuffer hal alread move to hwcomposer
+06-29 11:37:02.264 I/FacsCacheGmsModule(32497): API connection successful!
+06-29 11:37:02.267 D/BoundBrokerSvc(32483): onBind: Intent { act=com.google.android.gms.facs.internal.service.START dat=chimera-action: cmp=com.google.android.gms/.chimera.GmsInternalApiService }
+06-29 11:37:02.267 D/BoundBrokerSvc(32483): Loading bound service for intent: Intent { act=com.google.android.gms.facs.internal.service.START dat=chimera-action: cmp=com.google.android.gms/.chimera.GmsInternalApiService }
+06-29 11:37:02.274 I/[Gralloc]( 3020): framebuffer hal alread move to hwcomposer
+06-29 11:37:02.281 W/ActivityManager( 3202): Activity pause timeout for ActivityRecord{22d94d7 u0 com.catalogizer.androidtv/.ui.MainActivity t736}
+06-29 11:37:02.285 I/[Gralloc]( 3020): framebuffer hal alread move to hwcomposer
+06-29 11:37:02.297 I/FacsCacheGmsModule(32483): Receiving API connection to internal FACS API...
+06-29 11:37:02.307 I/FacsCacheGmsModule(32483): API connection successful!
+06-29 11:37:02.414 W/PhBaseOp(32497): Phenotype API error. Event: # dnys@f514f090, EventCode: COMMIT_CONFIG [CONTEXT service_id=51 ]
+06-29 11:37:02.414 W/PhBaseOp(32497): calb: 29547: Stale snapshot for com.google.android.libraries.mdi.sync#com.google.android.tvlauncher(new configuration available)
+06-29 11:37:02.414 W/PhBaseOp(32497): 	at cane.d(:com.google.android.gms@262334115@26.23.34 (080306-933906539):454)
+06-29 11:37:02.414 W/PhBaseOp(32497): 	at cane.b(:com.google.android.gms@262334115@26.23.34 (080306-933906539):44)
+06-29 11:37:02.414 W/PhBaseOp(32497): 	at cand.i(:com.google.android.gms@262334115@26.23.34 (080306-933906539):3)
+06-29 11:37:02.414 W/PhBaseOp(32497): 	at camz.h(:com.google.android.gms@262334115@26.23.34 (080306-933906539):34)
+06-29 11:37:02.414 W/PhBaseOp(32497): 	at camz.f(:com.google.android.gms@262334115@26.23.34 (080306-933906539):16)
+06-29 11:37:02.414 W/PhBaseOp(32497): 	at bcqm.fa(:com.google.android.gms@262334115@26.23.34 (080306-933906539):1)
+06-29 11:37:02.414 W/PhBaseOp(32497): 	at bcqu.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):121)
+06-29 11:37:02.414 W/PhBaseOp(32497): 	at cuqr.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):23)
+06-29 11:37:02.414 W/PhBaseOp(32497): 	at ajie.c(:com.google.android.gms@262334115@26.23.34 (080306-933906539):50)
+06-29 11:37:02.414 W/PhBaseOp(32497): 	at ajie.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):85)
+06-29 11:37:02.414 W/PhBaseOp(32497): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1167)
+06-29 11:37:02.414 W/PhBaseOp(32497): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)
+06-29 11:37:02.414 W/PhBaseOp(32497): 	at ajnr.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):8)
+06-29 11:37:02.414 W/PhBaseOp(32497): 	at java.lang.Thread.run(Thread.java:764)
+06-29 11:37:02.417 W/AsyncOperation(32497): operation=CommitToConfigurationOperationCall, opStatusCode=29547 [CONTEXT service_id=51 ]
+06-29 11:37:02.417 W/AsyncOperation(32497): OperationException[Status{statusCode=Stale snapshot for com.google.android.libraries.mdi.sync#com.google.android.tvlauncher(new configuration available), resolution=null}]
+06-29 11:37:02.417 W/AsyncOperation(32497): 	at camz.h(:com.google.android.gms@262334115@26.23.34 (080306-933906539):64)
+06-29 11:37:02.417 W/AsyncOperation(32497): 	at camz.f(:com.google.android.gms@262334115@26.23.34 (080306-933906539):16)
+06-29 11:37:02.417 W/AsyncOperation(32497): 	at bcqm.fa(:com.google.android.gms@262334115@26.23.34 (080306-933906539):1)
+06-29 11:37:02.417 W/AsyncOperation(32497): 	at bcqu.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):121)
+06-29 11:37:02.417 W/AsyncOperation(32497): 	at cuqr.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):23)
+06-29 11:37:02.417 W/AsyncOperation(32497): 	at ajie.c(:com.google.android.gms@262334115@26.23.34 (080306-933906539):50)
+06-29 11:37:02.417 W/AsyncOperation(32497): 	at ajie.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):85)
+06-29 11:37:02.417 W/AsyncOperation(32497): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1167)
+06-29 11:37:02.417 W/AsyncOperation(32497): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)
+06-29 11:37:02.417 W/AsyncOperation(32497): 	at ajnr.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):8)
+06-29 11:37:02.417 W/AsyncOperation(32497): 	at java.lang.Thread.run(Thread.java:764)
+06-29 11:37:02.438 W/PhBaseOp(32497): Phenotype API error. Event: # dnys@9a67f88d, EventCode: COMMIT_CONFIG [CONTEXT service_id=51 ]
+06-29 11:37:02.438 W/PhBaseOp(32497): calb: 29547: Stale snapshot for com.google.android.libraries.personalization.footprints#com.google.android.tvlauncher(new configuration available)
+06-29 11:37:02.438 W/PhBaseOp(32497): 	at cane.d(:com.google.android.gms@262334115@26.23.34 (080306-933906539):454)
+06-29 11:37:02.438 W/PhBaseOp(32497): 	at cane.b(:com.google.android.gms@262334115@26.23.34 (080306-933906539):44)
+06-29 11:37:02.438 W/PhBaseOp(32497): 	at cand.i(:com.google.android.gms@262334115@26.23.34 (080306-933906539):3)
+06-29 11:37:02.438 W/PhBaseOp(32497): 	at camz.h(:com.google.android.gms@262334115@26.23.34 (080306-933906539):34)
+06-29 11:37:02.438 W/PhBaseOp(32497): 	at camz.f(:com.google.android.gms@262334115@26.23.34 (080306-933906539):16)
+06-29 11:37:02.438 W/PhBaseOp(32497): 	at bcqm.fa(:com.google.android.gms@262334115@26.23.34 (080306-933906539):1)
+06-29 11:37:02.438 W/PhBaseOp(32497): 	at bcqu.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):121)
+06-29 11:37:02.438 W/PhBaseOp(32497): 	at cuqr.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):23)
+06-29 11:37:02.438 W/PhBaseOp(32497): 	at ajie.c(:com.google.android.gms@262334115@26.23.34 (080306-933906539):50)
+06-29 11:37:02.438 W/PhBaseOp(32497): 	at ajie.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):85)
+06-29 11:37:02.438 W/PhBaseOp(32497): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1167)
+06-29 11:37:02.438 W/PhBaseOp(32497): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)
+06-29 11:37:02.438 W/PhBaseOp(32497): 	at ajnr.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):8)
+06-29 11:37:02.438 W/PhBaseOp(32497): 	at java.lang.Thread.run(Thread.java:764)
+06-29 11:37:02.441 W/AsyncOperation(32497): operation=CommitToConfigurationOperationCall, opStatusCode=29547 [CONTEXT service_id=51 ]
+06-29 11:37:02.441 W/AsyncOperation(32497): OperationException[Status{statusCode=Stale snapshot for com.google.android.libraries.personalization.footprints#com.google.android.tvlauncher(new configuration available), resolution=null}]
+06-29 11:37:02.441 W/AsyncOperation(32497): 	at camz.h(:com.google.android.gms@262334115@26.23.34 (080306-933906539):64)
+06-29 11:37:02.441 W/AsyncOperation(32497): 	at camz.f(:com.google.android.gms@262334115@26.23.34 (080306-933906539):16)
+06-29 11:37:02.441 W/AsyncOperation(32497): 	at bcqm.fa(:com.google.android.gms@262334115@26.23.34 (080306-933906539):1)
+06-29 11:37:02.441 W/AsyncOperation(32497): 	at bcqu.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):121)
+06-29 11:37:02.441 W/AsyncOperation(32497): 	at cuqr.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):23)
+06-29 11:37:02.441 W/AsyncOperation(32497): 	at ajie.c(:com.google.android.gms@262334115@26.23.34 (080306-933906539):50)
+06-29 11:37:02.441 W/AsyncOperation(32497): 	at ajie.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):85)
+06-29 11:37:02.441 W/AsyncOperation(32497): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1167)
+06-29 11:37:02.441 W/AsyncOperation(32497): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)
+06-29 11:37:02.441 W/AsyncOperation(32497): 	at ajnr.run(:com.google.android.gms@262334115@26.23.34 (080306-933906539):8)
+06-29 11:37:02.441 W/AsyncOperation(32497): 	at java.lang.Thread.run(Thread.java:764)
+06-29 11:37:02.516 I/roid.tvlaunche( 1017): The ClassLoaderContext is a special shared library.
+06-29 11:37:02.559 E/MesonHwc( 3022): mi version
+06-29 11:37:02.563 E/MesonHwc( 3022): mi version
+06-29 11:37:02.586 I/GoogleInputMethodService( 7889): GoogleInputMethodService.onFinishInput():2084 
+06-29 11:37:02.590 I/Module  ( 7889): DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():101 repeatCheckTimes = 0, locked = false
+06-29 11:37:02.592 I/GoogleInputMethodService( 7889): GoogleInputMethodService.onStartInput():1345 onStartInput(EditorInfo{EditorInfo{packageName=com.google.android.tvlauncher, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=2131428224, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+06-29 11:37:02.597 I/Module  ( 7889): DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():101 repeatCheckTimes = 1, locked = false
+06-29 11:37:02.635 D/ConnectivityService( 3202): requestNetwork for uid/pid:10029/1017 NetworkRequest [ TRACK_DEFAULT id=399, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10029] ]
+06-29 11:37:02.637 D/WIFI    ( 3202): got request NetworkRequest [ TRACK_DEFAULT id=399, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10029] ] with score 60
+06-29 11:37:02.638 D/WIFI_UT ( 3202): got request NetworkRequest [ TRACK_DEFAULT id=399, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10029] ] with score 60
+06-29 11:37:02.638 D/Ethernet( 3202): got request NetworkRequest [ TRACK_DEFAULT id=399, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED Unwanted:  Uid: 10029] ] with score 60
+06-29 11:37:02.670 I/FacsCacheGmsModule(32497): (REDACTED) Received 'getActivityControlsSettings' request from package '%s', instance id '%s', version '%d'...
+06-29 11:37:02.675 I/FacsCacheGmsModule(32497): Operation 'getActivityControlsSettings' dispatched!
+06-29 11:37:02.678 I/FacsCacheGmsModule(32497): (REDACTED) Executing operation '%s'...
+06-29 11:37:02.696 I/FacsCacheGmsModule(32497): (REDACTED) Operation '%s' successful!
+06-29 11:37:02.779 I/FontLog (32497): (REDACTED) Received query %s, URI %s
+06-29 11:37:02.779 I/FontLog (32497): (REDACTED) Query [%s] resolved to %s
+06-29 11:37:02.802 I/FontLog (32497): (REDACTED) Font PFD returned from cache for %s
+06-29 11:37:02.803 I/FontLog (32497): (REDACTED) Fetch %s end status %s
+06-29 11:37:02.845 W/InputMethodManager( 1017): Ignoring onBind: cur seq=123, given seq=122
+06-29 11:37:02.846 I/GoogleInputMethodService( 7889): GoogleInputMethodService.onFinishInput():2084 
+06-29 11:37:02.852 I/Module  ( 7889): DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():101 repeatCheckTimes = 0, locked = false
+06-29 11:37:02.853 I/GoogleInputMethodService( 7889): GoogleInputMethodService.onStartInput():1345 onStartInput(EditorInfo{EditorInfo{packageName=com.google.android.tvlauncher, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=2131427587, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+06-29 11:37:02.859 I/Module  ( 7889): DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():101 repeatCheckTimes = 1, locked = false
+06-29 11:37:02.900 I/FontLog (32497): (REDACTED) Pulling font file for id = %d, cache size = %d
+06-29 11:37:02.989 I/roid.tvlaunche( 1017): Background concurrent copying GC freed 36470(2MB) AllocSpace objects, 4(144KB) LOS objects, 50% free, 6MB/12MB, paused 2.250ms total 782.980ms
+06-29 11:37:03.232 I/.gms.persisten(32497): Background concurrent copying GC freed 112453(6MB) AllocSpace objects, 14(392KB) LOS objects, 49% free, 6MB/12MB, paused 21.189ms total 418.783ms
+06-29 11:37:03.481 I/OpenGLRenderer( 1017): Davey! duration=807ms; Flags=1, IntendedVsync=346749953657349, Vsync=346750136990675, OldestInputEvent=9223372036854775807, NewestInputEvent=0, HandleInputStart=346750146561868, AnimationStart=346750146623618, PerformTraversalsStart=346750147370410, DrawStart=346750700620549, SyncQueued=346750708949050, SyncStart=346750709064008, IssueDrawCommandsStart=346750710871425, SwapBuffers=346750759047055, FrameCompleted=346750761035721, DequeueBufferDuration=483000, QueueBufferDuration=1483000, 
+06-29 11:37:03.497 I/Choreographer( 1017): Skipped 37 frames!  The application may be doing too much work on its main thread.
+06-29 11:37:03.512 I/GoogleInputMethodService( 7889): GoogleInputMethodService.onFinishInput():2084 
+06-29 11:37:03.514 I/Module  ( 7889): DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():101 repeatCheckTimes = 0, locked = false
+06-29 11:37:03.515 I/GoogleInputMethodService( 7889): GoogleInputMethodService.onStartInput():1345 onStartInput(EditorInfo{EditorInfo{packageName=com.google.android.tvlauncher, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=2131428791, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+06-29 11:37:03.518 I/Module  ( 7889): DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():101 repeatCheckTimes = 1, locked = false
+06-29 11:37:03.584 D/PowerManagerService( 3202): updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+06-29 11:37:03.751 E/WifiVendorHal( 3202): getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+06-29 11:37:03.765 D/PowerManagerService( 3202): updateSuspendBlockerLocked mWakefulness=1,needWakeLockSuspendBlocker=true
+06-29 11:37:03.880 D/BoundBrokerSvc(32497): onRebind: Intent { act=com.google.android.gms.common.telemetry.service.START dat=chimera-action: cmp=com.google.android.gms/.chimera.PersistentApiService }
+06-29 11:37:04.044 W/pao     ( 1017): Failed to create JWT helper. This is unexpected
+06-29 11:37:04.044 W/pao     ( 1017): java.lang.NoSuchMethodException: getScopes []
+06-29 11:37:04.044 W/pao     ( 1017): 	at java.lang.Class.getMethod(Class.java:2068)
+06-29 11:37:04.044 W/pao     ( 1017): 	at java.lang.Class.getMethod(Class.java:1690)
+06-29 11:37:04.044 W/pao     ( 1017): 	at pam.<init>(PG:15)
+06-29 11:37:04.044 W/pao     ( 1017): 	at pao.<clinit>(PG:27)
+06-29 11:37:04.044 W/pao     ( 1017): 	at kny.e(PG:1089)
+06-29 11:37:04.044 W/pao     ( 1017): 	at hrh.v(PG:23)
+06-29 11:37:04.044 W/pao     ( 1017): 	at fcz.b(PG:227)
+06-29 11:37:04.044 W/pao     ( 1017): 	at fcz.a(PG:69)
+06-29 11:37:04.044 W/pao     ( 1017): 	at jsy.c(PG:137)
+06-29 11:37:04.044 W/pao     ( 1017): 	at jsy.b(PG:8)
+06-29 11:37:04.044 W/pao     ( 1017): 	at jzl.d(PG:177)
+06-29 11:37:04.044 W/pao     ( 1017): 	at itc.b(PG:33)
+06-29 11:37:04.044 W/pao     ( 1017): 	at itc.a(PG:12)
+06-29 11:37:04.044 W/pao     ( 1017): 	at jyw.a(PG:140)
+06-29 11:37:04.044 W/pao     ( 1017): 	at jyw.c(PG:31)
+06-29 11:37:04.044 W/pao     ( 1017): 	at itd.e(PG:17)
+06-29 11:37:04.044 W/pao     ( 1017): 	at ire.b(PG:150)
+06-29 11:37:04.044 W/pao     ( 1017): 	at ppq.dk(PG:11)
+06-29 11:37:04.044 W/pao     ( 1017): 	at pvh.run(PG:107)
+06-29 11:37:04.044 W/pao     ( 1017): 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1167)
+06-29 11:37:04.044 W/pao     ( 1017): 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:641)
+06-29 11:37:04.044 W/pao     ( 1017): 	at java.lang.Thread.run(Thread.java:764)
+06-29 11:37:04.370 E/TaskPersister( 3202): File error accessing recents directory (directory doesn't exist?).
+06-29 11:37:04.595 I/ActivityManager( 3202): Killing 31572:com.android.keychain/1000 (adj 906): empty for 1800s
+06-29 11:37:04.596 I/ActivityManager( 3202): Killing 31535:com.android.defcontainer/u0a22 (adj 906): empty for 1800s
+06-29 11:37:04.602 W/libprocessgroup( 3202): kill(-31572, 9) failed: No such process
+06-29 11:37:04.636 I/Zygote  ( 3003): Process 31572 exited due to signal (9)
+06-29 11:37:04.645 W/libprocessgroup( 3202): kill(-31572, 9) failed: No such process
+06-29 11:37:04.645 I/libprocessgroup( 3202): Successfully killed process cgroup uid 1000 pid 31572 in 43ms
+06-29 11:37:04.646 W/libprocessgroup( 3202): kill(-31535, 9) failed: No such process
+06-29 11:37:04.657 I/Zygote  ( 3003): Process 31535 exited due to signal (9)
+06-29 11:37:04.689 W/libprocessgroup( 3202): kill(-31535, 9) failed: No such process
+06-29 11:37:04.689 I/libprocessgroup( 3202): Successfully killed process cgroup uid 10022 pid 31535 in 43ms
+06-29 11:37:05.349 V/BleRemoteService( 9914): requestScan,RC size:1,hasInit:true,mIsPair:false,Connecting:false,isScreenOn:true,allowMoreThanOneRC:false
+06-29 11:37:05.723 I/cast_shell(21654): [0629/113705.723515:INFO:wifi_frame_histogram_capturer.cc(406)] No histogram or IOCTL data
+06-29 11:37:05.726 I/cast_shell(21654): [0629/113705.726825:INFO:wifi_util.cc(197)] Current wifi TDLS peers:
+06-29 11:37:05.727 I/cast_shell(21654): [0629/113705.727004:INFO:wifi_util.cc(199)] 	No peers:
+06-29 11:37:05.735 I/cast_shell(21654): [0629/113705.735007:INFO:metrics_recorder.cc(193)] Record action: Cast.CecHdmiInputState.Unknown
+06-29 11:37:05.735 I/cast_shell(21654): [0629/113705.735266:INFO:metrics_recorder.cc(193)] Record action: Cast.CecStandby.Unknown
+06-29 11:37:05.846 E/katniss_search_TraceManagerImpl(  407): Trace Application creation timed out after 1794827 ms. Complete trace: # yku@929b96a5
+06-29 11:37:05.846 E/katniss_search_TraceManagerImpl(  407): ylb: 
+06-29 11:37:05.846 E/katniss_search_TraceManagerImpl(  407): 	at tk_trace.Write device_data(Started After:0)
+06-29 11:37:05.846 E/katniss_search_TraceManagerImpl(  407): 	at tk_trace.Update device_data(Started After:0)
+06-29 11:37:05.846 E/katniss_search_TraceManagerImpl(  407): 	at tk_trace.Application.onCreate(Started After:0)
+06-29 11:37:05.846 E/katniss_search_TraceManagerImpl(  407): 	at tk_trace.Application creation(Started After:0)
+06-29 11:37:05.846 E/katniss_search_TraceManagerImpl(  407): 	at tk_trace.Broadcast to com.google.apps.tiktok.experiments.phenotype.ConfigurationUpdatedReceiver_Receiver com.google.android.gms.phenotype.UPDATE(Started After:0)
+06-29 11:37:06.237 I/cast_shell(21654): [0629/113706.237072:INFO:service_base.h(78)] Size of the map for type AuthTokenResponse is 0
+06-29 11:37:06.311 I/cast_shell(21654): [0629/113706.311740:INFO:service_base.h(246)] Container sizes for type CloudSetting are (session_info_map: 0), (topic_info_map: 21), (pending_events: 0).
+06-29 11:37:06.312 I/cast_shell(21654): [0629/113706.312835:INFO:metrics_stat_logger.cc(38)] Metrics stat for the past 60 secs : total=8
+06-29 11:37:06.312 I/cast_shell(21654): [metrics_stat_logger] AppRunning=1
+06-29 11:37:06.312 I/cast_shell(21654): [metrics_stat_logger] Cast.CecHdmiInputState.Unknown=1
+06-29 11:37:06.312 I/cast_shell(21654): [metrics_stat_logger] Cast.CecStandby.Unknown=1
+06-29 11:37:06.312 I/cast_shell(21654): [metrics_stat_logger] Cast.ConnectionType.Wifi=1
+06-29 11:37:06.312 I/cast_shell(21654): [metrics_stat_logger] Cast.Discovery.Mdns.Query.Cast.Count=1
+06-29 11:37:06.312 I/cast_shell(21654): [metrics_stat_logger] Cast.Discovery.Mdns.Request.In=2
+06-29 11:37:06.312 I/cast_shell(21654): [metrics_stat_logger] Cast.Discovery.Mdns.Response.Out=2
+06-29 11:37:06.312 I/cast_shell(21654): [metrics_stat_logger] Cast.Network.CheckIn=1
+06-29 11:37:06.756 E/WifiVendorHal( 3202): getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }
+06-29 11:37:06.953 I/cast_shell(21654): [0629/113706.953755:INFO:mdns_app_filter.cc(3550)] Mdns cast queries recently sent: queries=1
+06-29 11:37:08.218 E/storaged( 3146): getDiskStats failed with result NOT_SUPPORTED and size 0
+06-29 11:37:08.900 D/BoundBrokerSvc(32497): onUnbind: Intent { act=com.google.android.gms.common.telemetry.service.START dat=chimera-action: cmp=com.google.android.gms/.chimera.PersistentApiService }
+06-29 11:37:09.763 E/WifiVendorHal( 3202): getWifiLinkLayerStats(l.937) failed {.code = ERROR_NOT_AVAILABLE, .description = }

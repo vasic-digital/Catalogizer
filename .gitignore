@@ -384,3 +384,6 @@ catalog-api-*-bin
 /run_catalog_api_durable.sh
 /enrich_loop.sh
 /scratchpad_api.env
+
+# QA evidence images — keep text evidence, link to PNGs in qa-results (§11.4.30)
+docs/qa/**/*.png
