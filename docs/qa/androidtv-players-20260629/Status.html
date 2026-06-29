@@ -205,8 +205,45 @@ first)</h2>
 blocker</td>
 <td>✅ FIXED + PROVEN on-device</td>
 </tr>
+<tr>
+<td>2</td>
+<td>Comic content unviewable (no reader; API failed on SMB)</td>
+<td>✅ API PROVEN; reader built; on-device pending</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Image content</td>
+<td>viewer built; 0 image entities in catalog (nothing to view)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Book/PDF (78 items)</td>
+<td>reader not built yet</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Audio (mp3)</td>
+<td>validation pending</td>
+</tr>
 </tbody>
 </table>
+<h2 id="comic-support-built-api-proven-against-real-smb-content">COMIC
+support — built + API proven against real SMB content</h2>
+<p>The Android TV <strong>comic reader</strong>
+(<code>ComicReaderScreen.kt</code>, 39 tests + 6 host-render goldens)
+and the <strong>comic-pages API</strong> (cbz extraction over the
+multi-protocol filesystem client) are committed. The API is
+<strong>proven against a REAL SMB-hosted comic</strong> (the original
+blocker was it only opened local files): entity 11 “Asterix - Operation
+Getafix” → <strong>30 pages listed</strong>, page 0 extracted as a real
+<strong>1.36 MB JPEG</strong> (HTTP 200, <code>image/jpeg</code>)
+directly from the <code>192.168.0.241:DATA8</code> SMB share. The
+“Failed to open comic archive” error is gone. Honest gaps:
+<code>.cbr</code> returns 501 (no rar lib); on-device drive-the-reader
+validation (Read Comic → §11.4.158 page-render capture) is the remaining
+step. A §11.4.84 lesson en route: a transient RED-probe was captured in
+a commit (bf7f1982) and corrected (586e14c1) — caught by the subagent’s
+honest disclosure + git verify.</p>
 <h2
 id="resolution-video-playback-fixed-and-re-validated-on-device-11.4.107-pass">RESOLUTION
 — video playback FIXED and re-validated on-device (§11.4.107 PASS)</h2>

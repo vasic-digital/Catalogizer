@@ -12,6 +12,22 @@
 | # | Item | Status |
 |---|------|--------|
 | 1 | **Video player crashed 100% on launch** — release blocker | ✅ FIXED + PROVEN on-device |
+| 2 | Comic content unviewable (no reader; API failed on SMB) | ✅ API PROVEN; reader built; on-device pending |
+| 3 | Image content | viewer built; 0 image entities in catalog (nothing to view) |
+| 4 | Book/PDF (78 items) | reader not built yet |
+| 5 | Audio (mp3) | validation pending |
+
+## COMIC support — built + API proven against real SMB content
+
+The Android TV **comic reader** (`ComicReaderScreen.kt`, 39 tests + 6 host-render goldens) and
+the **comic-pages API** (cbz extraction over the multi-protocol filesystem client) are committed.
+The API is **proven against a REAL SMB-hosted comic** (the original blocker was it only opened
+local files): entity 11 "Asterix - Operation Getafix" → **30 pages listed**, page 0 extracted as
+a real **1.36 MB JPEG** (HTTP 200, `image/jpeg`) directly from the `192.168.0.241:DATA8` SMB
+share. The "Failed to open comic archive" error is gone. Honest gaps: `.cbr` returns 501 (no rar
+lib); on-device drive-the-reader validation (Read Comic → §11.4.158 page-render capture) is the
+remaining step. A §11.4.84 lesson en route: a transient RED-probe was captured in a commit
+(bf7f1982) and corrected (586e14c1) — caught by the subagent's honest disclosure + git verify.
 
 ## RESOLUTION — video playback FIXED and re-validated on-device (§11.4.107 PASS)
 
