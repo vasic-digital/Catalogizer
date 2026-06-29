@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>2026-06-29-androidtv-player-validation-and-readers-design</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1
+id="android-tv-playerviewer-validation-missing-readers-design">Android
+TV Player/Viewer Validation + Missing Readers — Design</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-29T16:10:00Z <strong>Authority:</strong> Operator mandate
+(2026-06-29): “physical proofs with hard evidence that all players for
+all supported content types work and its UI/UX controls … books, comics,
+images … fully tested, validated and verified … no false results or
+bluff.” Constitution §11.4.107 (AV liveness battery), §11.4.117
+(pixel-oracle), §11.4.143 (real-user journey), §11.4.136 (real-content
+playback), §11.4.158/§11.4.159 (window-scoped recording +
+read-the-screen), §11.4.170 (host-side rendered-UI proof), §11.4.52
+(autonomous vs operator-attended), §11.4.25 (coverage ledger).</p>
+<h2 id="scope-operator-approved">Scope (operator-approved)</h2>
+<p>Platform: <strong>Android TV only</strong> (connected device MIBOX4
+<span class="citation"
+data-cites="192.168.0.214:5555">@192.168.0.214:5555</span>). Evidence
+bar: <strong>full §11.4.107 battery (strictest)</strong>. Decision:
+<strong>test what exists AND build the missing readers</strong>, then
+validate them too.</p>
+<h2 id="ground-truth-established-empirically-11.4.6-not-assumed">Ground
+truth (established empirically, §11.4.6 — not assumed)</h2>
+<ul>
+<li><strong>One real player on TV:</strong>
+<code>ui/screens/player/MediaPlayerScreen.kt</code> = ExoPlayer (Media3)
++ custom VLC-style D-pad overlay (play/pause, seek ±, speed presets,
+back). <strong>Video-focused.</strong> Resolves the stream via
+<code>GET /api/v1/entities/:id/stream</code> (<code>stream_url</code>
+field), with auth.</li>
+<li><strong>Routing:</strong>
+<code>MediaDetailScreen.isContainerType</code> → {tv_show, tv_season,
+music_album} browse children; every other leaf type →
+<code>onNavigateToPlayer</code> (the video player).</li>
+<li><strong>NO dedicated readers exist</strong> for book / comic / image
+on TV (no Reader/Viewer screens). Selecting those leaf types currently
+routes to the video player, which cannot render them.</li>
+<li><strong>Real content present</strong> (catalog DB): 3172 mkv + 2792
+mp4 + 672 avi video, 47871 mp3 audio, 28812 jpg + 1623 png images, 2192
+cbr + 1230 cbz comics, 93 pdf books.</li>
+<li><strong>Building blocks:</strong> Coil (<code>coil-compose</code>
+2.5.0 + <code>coil-svg</code>) already a dependency. Raw file streaming
+endpoints exist (<code>/api/v1/entities/:id/stream</code>,
+<code>/stream/:id</code>). NO paged comic/book reading API yet (only
+cover/image-proxy).</li>
+</ul>
+<h2 id="phases-each-independently-shippable">Phases (each independently
+shippable)</h2>
+<h3
+id="phase-1-validate-what-exists-with-captured-evidence-no-new-code">Phase
+1 — Validate what EXISTS, with captured evidence (no new code)</h3>
+<p>Establish the honest baseline + prove the video/audio players. 1.
+<strong>Video playback (movie + TV episode)</strong> — the deep case.
+Drive the real journey (launch → login via §11.4.117 pixel-oracle →
+browse → select a real mp4/mkv title → Play) and apply the §11.4.107
+battery: window-scoped MP4 screen-recording (§11.4.159),
+freeze-detection (adjacent-frame perceptual-hash distance &gt; threshold
+= advancing), an independent frame-advance counter from
+<code>dumpsys media.metrics</code> / SurfaceFlinger, not-stale check,
+measured-fps/decoder-health (dropped-buffer budget per §11.4.136), then
+exercise EVERY UI/UX control with captured proof: pause (frames stop +
+counter flat), resume (advance), seek (position jumps), speed change,
+back (returns to detail). Self-validated analyzer golden-good/golden-bad
+per §11.4.107(10). 2. <strong>Audio (mp3)</strong> — play a real track;
+capture player state + on-device audio-session evidence
+(<code>dumpsys audio</code> active track / AudioTrack). Honest boundary:
+true acoustic output has no clean on-device oracle (§11.4.107
+honest-gap) — capture what is provable, mark the rest operator-attended.
+3. <strong>Books / comics / images — empirical baseline:</strong> drive
+the app to a real comic, book, and image item; capture exactly what
+happens today (video-player error? blank? fallback?). Record the
+truthful current verdict (expected: NOT-IMPLEMENTED). This is the
+§11.4.6 baseline that justifies Phase 2 — never a faked pass.</p>
+<h3
+id="phase-2-build-the-missing-readers-tdd-host-side-render-proof-11.4.170">Phase
+2 — Build the missing readers (TDD + host-side render proof
+§11.4.170)</h3>
+<p>Each viewer is an independent unit (own screen, own route, own
+tests). Ordered simplest-first: 1. <strong>Image viewer</strong>
+(jpg/png/webp) — Compose screen using Coil <code>AsyncImage</code> over
+the streamed file URL; D-pad: next/prev within a directory, zoom, back.
+Simplest (Coil already present). 2. <strong>Comic reader</strong>
+(cbz/cbr) — paged image viewer. Needs an <strong>API addition</strong>:
+an endpoint that lists/extracts pages from a cbz (zip) / cbr (rar)
+archive (e.g. <code>GET    /api/v1/entities/:id/pages</code> +
+<code>/pages/:n</code>). TV screen: paged D-pad navigation (next/prev
+page, first/last, back), page-count indicator. 3. <strong>Book/PDF
+reader</strong> (pdf) — render pages (the API already links
+go-fitz/mupdf per the build deps); page nav. epub deferred unless
+trivial. Routing change in <code>MediaDetailScreen</code>: dispatch leaf
+type → {image_viewer | comic_reader | book_reader | media_player} by
+media_type/extension instead of always the video player. Each: §11.4.43
+TDD (unit + the §11.4.170 host-side rendered-pixel proof: the Compose
+screen rendered to PNG on the host via Roborazzi/Paparazzi, golden
+image-diff + OCR/vision oracle that the page content is legible,
+light+dark).</p>
+<h3
+id="phase-3-validate-the-new-readers-on-device-full-11.4.107-battery">Phase
+3 — Validate the new readers on-device (full §11.4.107 battery)</h3>
+<p>Drive each new reader on the MIBOX4 with a real comic/book/image:
+§11.4.158 read-the-screen (OCR confirms a real page rendered, not
+blank/error), §11.4.117 pixel-oracle navigation, exercise every control
+(page next/prev, zoom, back), window-scoped MP4 recording,
+self-validated analyzer.</p>
+<h2 id="deliverables">Deliverables</h2>
+<ul>
+<li><code>docs/qa/androidtv-players-&lt;run-id&gt;/</code> —
+per-content-type evidence (recordings, frame analyses, dumpsys captures,
+screenshots), a <strong>coverage ledger</strong> (§11.4.25):
+content-type × player/viewer × platform × evidence-path × verdict {PASS
+| operator-attended | NOT-IMPLEMENTED→built→PASS}.</li>
+<li>New TV reader screens + routing (Phase 2), their unit + host-render
+tests, the comic-pages API.</li>
+<li>All TDD RED→GREEN, go vet/lint clean, pushed to all 6 remotes;
+HelixQA bank entries per §11.4.58 layer-4.</li>
+</ul>
+<h2 id="honest-boundaries-11.4.6">Honest boundaries (§11.4.6)</h2>
+<ul>
+<li>Only Android TV this effort; Android-phone/desktop/web are separate
+(their harnesses unverified).</li>
+<li>Acoustic audio output + true photon-FPS at the panel have no clean
+on-device software oracle — flagged as honest gaps, not claimed.</li>
+<li>Where a player genuinely cannot be autonomously driven (secure
+surface, hard input), it is an operator-attended SKIP-with-reason per
+§11.4.52 + a tracked item — never a faked PASS.</li>
+</ul>
+<h2 id="non-goals-yagni">Non-goals (YAGNI)</h2>
+<ul>
+<li>Other platforms (phone/desktop/web) this pass.</li>
+<li>epub if non-trivial (pdf covers the book case for the 93 pdf
+items).</li>
+<li>Music_artist/song/game/software types (0 or non-playable content;
+software isn’t “played”).</li>
+</ul>
+</body>
+</html>
