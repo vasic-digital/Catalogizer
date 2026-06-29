@@ -116,22 +116,29 @@ Five composable TDD fixes (all RED→GREEN, go vet clean, all pushed):
 5. Title normalization (`cleanTitleForSearch` — strips "001 - " prefixes, [release]/(scene)
    tags that broke TMDB matching)
 
-**Captured end-to-end proof (§11.4.123):**
-- `external_metadata`: 0 → **647/1192 distinct movies (54%) + 120/177 TV (68%)** real TMDB
-  covers, and climbing as the enrichment loop runs (also 189 comics, 59 software, etc.).
-  CORRECTION (§11.4.6): an earlier draft cited "1153/1192 (97%)" — that was a non-distinct
-  JOIN count read DURING active concurrent enrichment and is inflated; the accurate stable
-  figure from `COUNT(DISTINCT media_item_id)` is the 54%/68% above. The pipeline is proven
-  working; full coverage accrues as the loop processes the remaining backlog.
+**Captured end-to-end proof (§11.4.123) — FINAL clean numbers (distinct, post-dedup, post-reclassify):**
+- `external_metadata`: 0 → **722/813 real movies (89%) + 167/177 TV shows (94%)** distinct TMDB
+  covers (`COUNT(DISTINCT media_item_id)`). The remaining ~11% are genuinely obscure/foreign
+  titles TMDB lacks, correctly marked `enrichment_attempted`.
+- DATA-INTEGRITY corrections applied this session (§11.4.6, anti-bluff):
+  - An earlier draft cited "1153/1192 (97%)" — a non-distinct JOIN count read during active
+    concurrent enrichment. The honest distinct figure is the 89%/94% above.
+  - The "1192 movies" total was itself inflated: **379 of them were TV episodes** (S01E09,
+    "Episode N") that the scanner misclassified as movies. Fixed in code (conservative
+    leading-anchored detector in aggregation_service.go, TDD) AND retroactively in the DB
+    (379 rows movie→tv_episode), so the real-movie denominator is 813, not 1192.
+  - The duplicate-row issue (Upsert read-then-write race) is now **structurally prevented**:
+    migration v20 adds a self-healing dedup + UNIQUE INDEX on (media_item_id, provider), and
+    Upsert is conflict-tolerant. 0 duplicate rows remain.
 - The exact marquee title the operator saw missing — "001 - Captain America - The First
   Avenger" (0 TMDB matches with its raw noisy title) — now serves a **real 101,336-byte
   image/jpeg** poster (`image.tmdb.org/t/p/w500/vSNxAJ...jpg`) via the cleaned query
-  "Captain America The First Avenger". This single item proves all five fixes compose.
-- Genuinely-unmatchable obscure/mislabeled titles TMDB does not have are correctly marked
-  `enrichment_attempted`, not a defect.
-- Known minor follow-up (tracked, parallel session): the per-item `Upsert` can create a few
-  duplicate `external_metadata` rows under concurrent enrichment (1056 rows vs 1050 distinct
-  items) — cosmetic only; `GetCoverURL` uses `ORDER BY last_fetched DESC LIMIT 1`.
+  "Captain America The First Avenger".
+
+**Eight composable fixes total** (the five above + dedup-prevention unique index + episode
+classification + transaction context-lifetime determinism fix), all TDD RED→GREEN, go vet
+clean, pushed to all 6 remotes. Infrastructure also made resilient: `restart: unless-stopped`
+on the dev pod (postgres no longer silently dies) + POSTGRES_DB config fallback.
 
 ## Honest boundary (§11.4.6)
 
