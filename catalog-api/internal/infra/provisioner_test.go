@@ -31,6 +31,12 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	if cfg.ComposeFile != defaultComposeFile {
 		t.Errorf("ComposeFile default = %q, want %q", cfg.ComposeFile, defaultComposeFile)
 	}
+	// §11.4.173 down-case: staging is ON by default so the remote provision-when-down
+	// path stages the tracked compose file at the path the orchestrator runs against
+	// (same project dir => named volumes reattach, §9). Opt out via INFRA_STAGE_COMPOSE=false.
+	if !cfg.StageCompose {
+		t.Errorf("StageCompose default = false, want true (down-case staging on by default)")
+	}
 	if cfg.PostgresPort != defaultPostgresPort {
 		t.Errorf("PostgresPort default = %q, want %q", cfg.PostgresPort, defaultPostgresPort)
 	}

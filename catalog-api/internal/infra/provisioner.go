@@ -81,9 +81,15 @@ type Config struct {
 	// RemoteHostName (INFRA_REMOTE_HOST_NAME) selects which CONTAINERS_REMOTE_*
 	// host to SSH to. Empty => match by address, then single-host fallback.
 	RemoteHostName string
-	// StageCompose (INFRA_STAGE_COMPOSE) copies the local ComposeFile to the
-	// remote RemoteComposeFile path (mkdir -p + scp) before booting. Off by
-	// default so no autonomous file write happens on the remote unless asked.
+	// StageCompose (INFRA_STAGE_COMPOSE) copies the local tracked ComposeFile to
+	// the remote RemoteComposeFile path (mkdir -p + scp) before booting. ON by
+	// default: staging runs ONLY in the remote provision-WHEN-DOWN path (after the
+	// idempotent-skip pre-flight has already returned for an up stack), and the
+	// down-case REQUIRES the compose file to exist at the exact path the
+	// orchestrator runs against — staged into the same project dir so the existing
+	// named-volume prefix is preserved and data reattaches (§9). Set
+	// INFRA_STAGE_COMPOSE=false to opt out (e.g. the remote file is managed
+	// out-of-band). Staging a tracked compose file is benign + idempotent.
 	StageCompose bool
 
 	PostgresPort string // INFRA_POSTGRES_PORT
@@ -106,7 +112,7 @@ func LoadConfig(getenv func(string) string) Config {
 		ComposeFile:       envStr(getenv, "INFRA_COMPOSE_FILE", defaultComposeFile),
 		RemoteComposeFile: strings.TrimSpace(getenv("INFRA_REMOTE_COMPOSE_FILE")),
 		RemoteHostName:    strings.TrimSpace(getenv("INFRA_REMOTE_HOST_NAME")),
-		StageCompose:      envBool(getenv, "INFRA_STAGE_COMPOSE", false),
+		StageCompose:      envBool(getenv, "INFRA_STAGE_COMPOSE", true),
 		PostgresPort:      envStr(getenv, "INFRA_POSTGRES_PORT", defaultPostgresPort),
 		RedisPort:         envStr(getenv, "INFRA_REDIS_PORT", defaultRedisPort),
 		MinioPort:         envStr(getenv, "INFRA_MINIO_PORT", defaultMinioPort),
