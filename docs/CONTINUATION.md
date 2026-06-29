@@ -3,13 +3,15 @@
 > Live work-state document per Constitution **§12.10 (CONTINUATION)** and
 > **§11.4.131 (standing resumption file)**. Read this first, then continue §11.4.126 loop.
 
-**Revision:** 8
-**Last modified:** 2026-06-29T14:30:00Z
+**Revision:** 9
+**Last modified:** 2026-06-29T14:35:00Z
 
 ## SHORT RESUMPTION
 
 Read this, `git fetch --all --prune`, then continue §11.4.126 autonomous loop.
-**HEAD: `06254f8d`** — all remotes in sync. Submodules reorganized under `submodules/` with snake_case names.
+**HEAD: `e5019c68`** — all 6 remotes in sync. Submodules reorganized under `submodules/` with snake_case names.
+git-lfs installed at `~/.local/bin` (required for push — see [[git-lfs-prepush-hook-blocker]] memory).
+catalog-api runs from durable tmux window `api-server` (socket `tmx-catalogizer`); enrichment loop in window `enrich2`.
 
 ## SYSTEM STATE
 
@@ -17,7 +19,8 @@ Read this, `git fetch --all --prune`, then continue §11.4.126 autonomous loop.
 |-----------|--------|--------|
 | **catalog-api** | ✅ Running | Port 28080, SQLite, identity credentials loaded, enrichment async |
 | **catalog-web** | ✅ Running | Port 3000, React TypeScript, 2398/2398 tests PASS, TS/lint clean |
-| **Android TV** | ✅ Running | 192.168.0.214:5555, Firebase Crashlytics active, crash-on-first-run FIXED |
+| **Android TV** | ✅ Running | 192.168.0.214:5555, Firebase Crashlytics WIRED+verified (runtime sig, settings.json fetched), crash-on-first-run FIXED |
+| **Catalog covers** | ✅ FIXED | Was: 0 covers (no TMDB key + DeepSeek 402). Now: TMDB key + LEFT-JOIN reachability + LLM failover + progress-marker. Real 64KB JPEG posters serving. Enrichment loop grinding backlog. |
 | **NAS DATA8 scan** | ✅ Completed | **119,000 files indexed** |
 | **NAS music** | ❌ Access denied | Requires CATALOGIZER_IDENTITY credentials update |
 | **NAS usbshare2** | ❌ Access denied | Requires CATALOGIZER_IDENTITY credentials update |
@@ -35,9 +38,22 @@ Read this, `git fetch --all --prune`, then continue §11.4.126 autonomous loop.
 
 | Commit | Description |
 |--------|-------------|
+| `e5019c68` | fix(covers): TMDB enrichment + reachability LEFT JOIN + LLM failover + progress marker (all TDD RED→GREEN) |
+| `4d434e0a` | docs(qa): Crashlytics on-device wiring evidence + security incident (redacted Firebase key) + feature ledger |
 | `06254f8d` | chore: add git-lfs tracking for build binaries |
 | `779239da` | chore: update submodule pointers — helix_qa and ui_components_react |
 | `43d4bdf0` | chore: extend .gitignore — remove tracked QA session databases/logs, deployment local envs |
+
+## OPEN ITEMS / OPERATOR ACTIONS
+
+- **Firebase API key exposure** (`docs/security/firebase-api-key-exposure-20260629.md`): the live
+  Android key is published in history commit `4cbc1311` (prior session). Operator chose ACCEPT-AS-IS
+  (no rotation, no history purge). Recommended eventual fix: restrict the key in Google Cloud Console
+  (package + SHA-256 + App Check). See [[firebase-api-key-in-git-history]] memory.
+- **Cover enrichment backlog**: continuous loop (tmux `enrich2`) grinding all 27750 items. Most are
+  music/comics/episodes TMDB can't match (marked `enrichment_attempted`); the 1192 movies + 177 TV
+  shows get real posters as the queue reaches them. Mechanism proven; full coverage takes time.
+- **SMB music + usbshare2 shares**: still ACCESS DENIED (the "2" the operator excluded from debugging).
 | `ae2c633e` | Auto-commit |
 | `365d6dfa` | sync: auto-commit before cross-host sync 20260628 |
 | `c74a633e` | Auto-commit |

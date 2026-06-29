@@ -181,13 +181,18 @@
 (CONTINUATION)</strong> and <strong>§11.4.131 (standing resumption
 file)</strong>. Read this first, then continue §11.4.126 loop.</p>
 </blockquote>
-<p><strong>Revision:</strong> 8 <strong>Last modified:</strong>
-2026-06-29T14:30:00Z</p>
+<p><strong>Revision:</strong> 9 <strong>Last modified:</strong>
+2026-06-29T14:35:00Z</p>
 <h2 id="short-resumption">SHORT RESUMPTION</h2>
 <p>Read this, <code>git fetch --all --prune</code>, then continue
-§11.4.126 autonomous loop. <strong>HEAD: <code>06254f8d</code></strong>
-— all remotes in sync. Submodules reorganized under
-<code>submodules/</code> with snake_case names.</p>
+§11.4.126 autonomous loop. <strong>HEAD: <code>e5019c68</code></strong>
+— all 6 remotes in sync. Submodules reorganized under
+<code>submodules/</code> with snake_case names. git-lfs installed at
+<code>~/.local/bin</code> (required for push — see
+[[git-lfs-prepush-hook-blocker]] memory). catalog-api runs from durable
+tmux window <code>api-server</code> (socket
+<code>tmx-catalogizer</code>); enrichment loop in window
+<code>enrich2</code>.</p>
 <h2 id="system-state">SYSTEM STATE</h2>
 <table>
 <colgroup>
@@ -218,8 +223,15 @@ clean</td>
 <tr>
 <td><strong>Android TV</strong></td>
 <td>✅ Running</td>
-<td>192.168.0.214:5555, Firebase Crashlytics active, crash-on-first-run
-FIXED</td>
+<td>192.168.0.214:5555, Firebase Crashlytics WIRED+verified (runtime
+sig, settings.json fetched), crash-on-first-run FIXED</td>
+</tr>
+<tr>
+<td><strong>Catalog covers</strong></td>
+<td>✅ FIXED</td>
+<td>Was: 0 covers (no TMDB key + DeepSeek 402). Now: TMDB key +
+LEFT-JOIN reachability + LLM failover + progress-marker. Real 64KB JPEG
+posters serving. Enrichment loop grinding backlog.</td>
 </tr>
 <tr>
 <td><strong>NAS DATA8 scan</strong></td>
@@ -297,6 +309,16 @@ FIXED</td>
 </thead>
 <tbody>
 <tr>
+<td><code>e5019c68</code></td>
+<td>fix(covers): TMDB enrichment + reachability LEFT JOIN + LLM failover
++ progress marker (all TDD RED→GREEN)</td>
+</tr>
+<tr>
+<td><code>4d434e0a</code></td>
+<td>docs(qa): Crashlytics on-device wiring evidence + security incident
+(redacted Firebase key) + feature ledger</td>
+</tr>
+<tr>
 <td><code>06254f8d</code></td>
 <td>chore: add git-lfs tracking for build binaries</td>
 </tr>
@@ -310,20 +332,28 @@ ui_components_react</td>
 <td>chore: extend .gitignore — remove tracked QA session databases/logs,
 deployment local envs</td>
 </tr>
-<tr>
-<td><code>ae2c633e</code></td>
-<td>Auto-commit</td>
-</tr>
-<tr>
-<td><code>365d6dfa</code></td>
-<td>sync: auto-commit before cross-host sync 20260628</td>
-</tr>
-<tr>
-<td><code>c74a633e</code></td>
-<td>Auto-commit</td>
-</tr>
 </tbody>
 </table>
+<h2 id="open-items-operator-actions">OPEN ITEMS / OPERATOR ACTIONS</h2>
+<ul>
+<li><strong>Firebase API key exposure</strong>
+(<code>docs/security/firebase-api-key-exposure-20260629.md</code>): the
+live Android key is published in history commit <code>4cbc1311</code>
+(prior session). Operator chose ACCEPT-AS-IS (no rotation, no history
+purge). Recommended eventual fix: restrict the key in Google Cloud
+Console (package + SHA-256 + App Check). See
+[[firebase-api-key-in-git-history]] memory.</li>
+<li><strong>Cover enrichment backlog</strong>: continuous loop (tmux
+<code>enrich2</code>) grinding all 27750 items. Most are
+music/comics/episodes TMDB can’t match (marked
+<code>enrichment_attempted</code>); the 1192 movies + 177 TV shows get
+real posters as the queue reaches them. Mechanism proven; full coverage
+takes time.</li>
+<li><strong>SMB music + usbshare2 shares</strong>: still ACCESS DENIED
+(the “2” the operator excluded from debugging). | <code>ae2c633e</code>
+| Auto-commit | | <code>365d6dfa</code> | sync: auto-commit before
+cross-host sync 20260628 | | <code>c74a633e</code> | Auto-commit |</li>
+</ul>
 <h2 id="critical-fixes">CRITICAL FIXES</h2>
 <ol type="1">
 <li><strong>Firebase crash-on-first-run</strong> —
