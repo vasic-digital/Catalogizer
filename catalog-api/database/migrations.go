@@ -31,6 +31,7 @@ func (db *DB) RunMigrations(ctx context.Context) error {
 		{Version: 17, Name: "create_image_quality_assessments", Up: db.createImageQualityAssessmentsTable},
 		{Version: 18, Name: "add_media_items_favorite_column", Up: db.addMediaItemsFavoriteColumn},
 		{Version: 19, Name: "create_share_identity_bindings", Up: db.createShareIdentityBindingsTable},
+		{Version: 20, Name: "external_metadata_unique_index", Up: db.createExternalMetadataUniqueIndex},
 	}
 
 	for _, migration := range migrations {

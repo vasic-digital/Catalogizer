@@ -423,6 +423,36 @@ func isContainerFolder(name string) bool {
 	return seasonContainerRe.MatchString(name)
 }
 
+// episodeSxxExxRe matches an "SxxExx" episode token anywhere in the name, with
+// optional separators (S01E09, s1e9, S1.E09, "S01 E09"). The leading 's' must
+// sit at a start/separator boundary AND be immediately followed by a digit, so
+// movie titles like "Se7en" (no digit after the 's') never match.
+var episodeSxxExxRe = regexp.MustCompile(`(?i)(?:^|[\s._-])s\d{1,2}[\s._-]*e\d{1,2}(?:\b|[\s._-]|$)`)
+
+// episodeLeadingRe matches a LEADING "Episode N" token ("Episode 5 - ...").
+// Anchored at the start so a real movie like "Star Wars Episode 1" (the token
+// appears mid-title) is NOT reclassified.
+var episodeLeadingRe = regexp.MustCompile(`(?i)^[\s._-]*episode[\s._-]*\d{1,3}\b`)
+
+// episodeNxNNRe matches the "NxNN" season-x-episode notation (1x09, 2x05). The
+// 2-3 digit episode part keeps it from matching resolutions like "1920x1080".
+var episodeNxNNRe = regexp.MustCompile(`(?i)(?:^|[\s._-])\d{1,2}x\d{2,3}(?:\b|[\s._-]|$)`)
+
+// looksLikeEpisodeName reports whether a directory/file name carries an
+// unambiguous single-episode token (SxxExx / leading "Episode N" / NxNN).
+//
+// Conservative by design: it is consulted only AFTER ParseTVShow fails to find
+// a show-name-prefixed season/episode, to rescue episodes whose name LEADS with
+// the token (e.g. "S01E09 The Perfect Storm") and would otherwise leak onto the
+// movie shelf. Real movies bearing plain numbers ("Ocean's Eleven", "2012",
+// "Se7en", "Apollo 13") carry none of these tokens and stay classified as
+// movies.
+func looksLikeEpisodeName(name string) bool {
+	return episodeSxxExxRe.MatchString(name) ||
+		episodeLeadingRe.MatchString(name) ||
+		episodeNxNNRe.MatchString(name)
+}
+
 // parseRichness ranks a parsed video title by how much structure it carries, so
 // the richer of {file-name parse, folder-name parse} wins. TV (season+episode) >
 // year-bearing movie > plain title.
@@ -1087,11 +1117,29 @@ func (s *AggregationService) detectMediaType(dir directoryInfo) (string, ParsedT
 		}
 	}
 
-	// TV show detection first (specific pattern)
+	// TV show detection first (specific pattern). ParseTVShow requires a
+	// show-name prefix BEFORE the SxxExx token, so "Breaking Bad S01E01" parses
+	// (Season/Episode set) and aggregates under the show entity.
 	tvParsed := ParseTVShow(name)
 	if tvParsed.Season != nil || tvParsed.Episode != nil {
 		return "tv_show", tvParsed
 	}
+
+	// Un-prefixed / LEADING episode tokens that ParseTVShow does not catch —
+	// e.g. "S01E09 The Perfect Storm", "S2E02 - The Awful Truth",
+	// "Episode 5 - Kissed by Fire", "S03E12 The Lady Killer", "1x09 ...".
+	// These are individual TV episodes that previously leaked onto the movie
+	// shelf (and could never match TMDB as movies); classify them as
+	// tv_episode. Checked before the coarse substring fallback below so an
+	// episode is never mis-bucketed as a whole tv_show.
+	if looksLikeEpisodeName(name) {
+		epParsed := ParseTVShow(name)
+		if epParsed.Title == "" {
+			epParsed = ParsedTitle{Title: CleanTitle(name)}
+		}
+		return "tv_episode", epParsed
+	}
+
 	nameLower := strings.ToLower(name)
 	if strings.Contains(nameLower, "season") || strings.Contains(nameLower, "complete") ||
 		strings.Contains(nameLower, "s01") || strings.Contains(nameLower, "s02") {

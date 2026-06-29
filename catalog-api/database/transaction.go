@@ -180,22 +180,44 @@ func (tx *Transaction) Exec(query string, args ...interface{}) (sql.Result, erro
 	return tx.Tx.ExecContext(ctx, query, args...)
 }
 
-// Query executes a query within the transaction with timeout
+// Query executes a query within the transaction.
+//
+// The returned *sql.Rows is consumed by the caller AFTER this method returns
+// (via rows.Next/Scan).  We therefore must NOT use context.WithTimeout +
+// defer cancel() here: the deferred cancel fires when Query returns, which
+// cancels the query context before the caller iterates the result set.  That
+// race lets database/sql's awaitDone goroutine close the rows with
+// context.Canceled in between the caller's rows.Next() and rows.Scan(),
+// producing spurious "context canceled" errors under scheduler load.  This is
+// the same hazard db.Query (connection.go) documents and avoids.
+//
+// We pass tx.ctx directly: it already carries the transaction timeout
+// (TransactionConfig.TransactionTimeout, applied in Begin) and is cancelled by
+// Commit/Rollback — the correct lifetime, since the rows are only valid for the
+// duration of the transaction.  Per-statement timeout safety is provided by the
+// driver (SQLite _busy_timeout, PostgreSQL statement_timeout).
 func (tx *Transaction) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	ctx, cancel := context.WithTimeout(tx.ctx, tx.config.QueryTimeout)
-	defer cancel()
-
 	query = tx.db.rewriteQuery(query)
-	return tx.Tx.QueryContext(ctx, query, args...)
+	return tx.Tx.QueryContext(tx.ctx, query, args...)
 }
 
-// QueryRow executes a query returning a single row within the transaction
+// QueryRow executes a query returning a single row within the transaction.
+//
+// *sql.Row buffers its result lazily — the read happens inside Scan(), which
+// the caller invokes after this method returns.  Using context.WithTimeout +
+// defer cancel() here races with Scan: the deferred cancel fires on return and
+// can cancel the context before the driver finishes reading the row, producing
+// spurious "context canceled" errors (reproduced under parallel load at
+// transaction_coverage_test.go:63).  This mirrors db.QueryRow (connection.go),
+// which documents and avoids the same hazard.
+//
+// We pass tx.ctx directly: it carries the transaction timeout and is cancelled
+// only by Commit/Rollback, after the row has been scanned.  Per-statement
+// timeout safety comes from the driver (SQLite _busy_timeout, PostgreSQL
+// statement_timeout).
 func (tx *Transaction) QueryRow(query string, args ...interface{}) *sql.Row {
-	ctx, cancel := context.WithTimeout(tx.ctx, tx.config.QueryTimeout)
-	defer cancel()
-
 	query = tx.db.rewriteQuery(query)
-	return tx.Tx.QueryRowContext(ctx, query, args...)
+	return tx.Tx.QueryRowContext(tx.ctx, query, args...)
 }
 
 // Commit commits the transaction with cleanup.

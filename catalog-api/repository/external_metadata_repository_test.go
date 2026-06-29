@@ -4,6 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
+	"os"
+	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -11,6 +15,7 @@ import (
 	"catalogizer/internal/media/models"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	_ "github.com/mutecomm/go-sqlcipher"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -347,4 +352,184 @@ func TestExternalMetadataRepository_Upsert_Update(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), em.ID) // inherits existing ID
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+// ---------------------------------------------------------------------------
+// Duplicate prevention — real SQLite DB (UNIQUE(media_item_id, provider))
+//
+// These tests exercise the production defect directly: under concurrent
+// enrichment the old read-then-write Upsert produced DUPLICATE
+// (media_item_id, provider) rows because nothing in the schema prevented it.
+// Migration v20 adds a UNIQUE index and Upsert recovers the losing INSERT as
+// an UPDATE.
+//
+// §11.4.115 polarity switch: by default these run against the FIXED schema
+// (unique index present) and assert the defect is ABSENT. Setting
+// EXTMETA_RED_MODE=1 drops the unique index to reproduce the pre-fix schema —
+// the SAME assertions then FAIL, proving the index is the load-bearing
+// guarantee (RED-on-broken). Run:
+//
+//	EXTMETA_RED_MODE=1 go test ./repository/ \
+//	  -run 'ExternalMetadataRepository_(UniqueIndexRejects|Upsert_Concurrent)' -count=1
+// ---------------------------------------------------------------------------
+
+const extMetaCreateTableSQL = `CREATE TABLE IF NOT EXISTS external_metadata (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	media_item_id INTEGER NOT NULL,
+	provider TEXT NOT NULL,
+	external_id TEXT NOT NULL,
+	data TEXT,
+	rating REAL,
+	review_url TEXT,
+	cover_url TEXT,
+	trailer_url TEXT,
+	last_fetched DATETIME DEFAULT CURRENT_TIMESTAMP
+);`
+
+const extMetaCreateUniqueIndexSQL = `CREATE UNIQUE INDEX IF NOT EXISTS idx_external_metadata_item_provider
+	ON external_metadata (media_item_id, provider);`
+
+// extMetaUniqueIndexEnabled is the §11.4.115 polarity gate. Default (RED_MODE
+// unset / not "1") = the fixed schema with the unique index. EXTMETA_RED_MODE=1
+// reproduces the pre-fix schema without it.
+func extMetaUniqueIndexEnabled() bool {
+	return os.Getenv("EXTMETA_RED_MODE") != "1"
+}
+
+// createExtMetaSchema builds the external_metadata table and, when the polarity
+// gate is on (default/fixed), the UNIQUE(media_item_id, provider) index.
+func createExtMetaSchema(t *testing.T, sqlDB *sql.DB) {
+	t.Helper()
+	_, err := sqlDB.Exec(extMetaCreateTableSQL)
+	require.NoError(t, err)
+	if extMetaUniqueIndexEnabled() {
+		_, err = sqlDB.Exec(extMetaCreateUniqueIndexSQL)
+		require.NoError(t, err)
+	}
+}
+
+// setupExtMetaMemDB returns a single-connection in-memory repo for deterministic
+// (non-concurrent) tests.
+func setupExtMetaMemDB(t *testing.T) (*ExternalMetadataRepository, *database.DB) {
+	t.Helper()
+	sqlDB, err := sql.Open("sqlite3", ":memory:")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = sqlDB.Close() })
+	sqlDB.SetMaxOpenConns(1)
+	createExtMetaSchema(t, sqlDB)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
+	return NewExternalMetadataRepository(db), db
+}
+
+// setupExtMetaFileDB returns a multi-connection file-backed repo (WAL +
+// busy_timeout) so concurrent goroutines genuinely contend at the SQL layer —
+// :memory: with >1 connection would create separate databases.
+func setupExtMetaFileDB(t *testing.T, maxConns int) (*ExternalMetadataRepository, *database.DB) {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "extmeta.db")
+	dsn := path + "?_busy_timeout=5000&_journal_mode=WAL&_synchronous=NORMAL"
+	sqlDB, err := sql.Open("sqlite3", dsn)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = sqlDB.Close() })
+	sqlDB.SetMaxOpenConns(maxConns)
+	createExtMetaSchema(t, sqlDB)
+	db := database.WrapDB(sqlDB, database.DialectSQLite)
+	return NewExternalMetadataRepository(db), db
+}
+
+func countExtMetaRows(t *testing.T, db *database.DB, mediaItemID int64, provider string) int {
+	t.Helper()
+	var n int
+	require.NoError(t, db.QueryRowContext(context.Background(),
+		`SELECT COUNT(*) FROM external_metadata WHERE media_item_id = ? AND provider = ?`,
+		mediaItemID, provider).Scan(&n))
+	return n
+}
+
+// TestExternalMetadataRepository_Upsert_SecondCallUpdatesNoDuplicate proves a
+// repeated Upsert of the same (media_item_id, provider) results in exactly ONE
+// row and the second call UPDATEs (cover_url changes), never inserts a second.
+func TestExternalMetadataRepository_Upsert_SecondCallUpdatesNoDuplicate(t *testing.T) {
+	repo, db := setupExtMetaMemDB(t)
+	ctx := context.Background()
+
+	require.NoError(t, repo.Upsert(ctx, &models.ExternalMetadata{
+		MediaItemID: 10, Provider: "tmdb", ExternalID: "111", Data: `{"v":1}`,
+		CoverURL: strPtr("cover1.jpg"),
+	}))
+	require.NoError(t, repo.Upsert(ctx, &models.ExternalMetadata{
+		MediaItemID: 10, Provider: "tmdb", ExternalID: "111", Data: `{"v":2}`,
+		CoverURL: strPtr("cover2.jpg"),
+	}))
+
+	assert.Equal(t, 1, countExtMetaRows(t, db, 10, "tmdb"),
+		"two Upserts of the same key must leave exactly one row")
+
+	got, err := repo.GetByItem(ctx, 10)
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+	require.NotNil(t, got[0].CoverURL)
+	assert.Equal(t, "cover2.jpg", *got[0].CoverURL,
+		"the second Upsert must UPDATE the existing row's cover_url")
+}
+
+// TestExternalMetadataRepository_UniqueIndexRejectsDuplicatePair proves the
+// UNIQUE index is the real guarantee: a second raw Create() for the same
+// (media_item_id, provider) is rejected at the DB layer. RED under
+// EXTMETA_RED_MODE=1 (no index → the second Create succeeds → 2 rows).
+func TestExternalMetadataRepository_UniqueIndexRejectsDuplicatePair(t *testing.T) {
+	repo, db := setupExtMetaMemDB(t)
+	ctx := context.Background()
+
+	_, err := repo.Create(ctx, &models.ExternalMetadata{
+		MediaItemID: 10, Provider: "tmdb", ExternalID: "a", Data: "{}",
+	})
+	require.NoError(t, err)
+
+	_, err = repo.Create(ctx, &models.ExternalMetadata{
+		MediaItemID: 10, Provider: "tmdb", ExternalID: "b", Data: "{}",
+	})
+	require.Error(t, err,
+		"the unique index must reject a second (media_item_id, provider) row")
+	assert.True(t, isUniqueViolation(err),
+		"error must be a unique-constraint violation, got: %v", err)
+	assert.Equal(t, 1, countExtMetaRows(t, db, 10, "tmdb"))
+}
+
+// TestExternalMetadataRepository_Upsert_ConcurrentSameKeyNoDuplicate is the race
+// test: N goroutines Upsert the same (media_item_id, provider) simultaneously.
+// After the fix exactly ONE row exists and every Upsert returns nil (the losing
+// INSERT is recovered as an UPDATE). RED under EXTMETA_RED_MODE=1 (no index →
+// concurrent writers produce duplicate rows → count != 1).
+func TestExternalMetadataRepository_Upsert_ConcurrentSameKeyNoDuplicate(t *testing.T) {
+	repo, db := setupExtMetaFileDB(t, 4)
+	ctx := context.Background()
+
+	const goroutines = 10
+	var wg sync.WaitGroup
+	errs := make([]error, goroutines)
+	start := make(chan struct{})
+
+	for i := 0; i < goroutines; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			cover := fmt.Sprintf("cover-%d.jpg", i)
+			<-start // release all goroutines together to maximise contention
+			errs[i] = repo.Upsert(ctx, &models.ExternalMetadata{
+				MediaItemID: 42, Provider: "tmdb",
+				ExternalID: fmt.Sprintf("ext-%d", i), Data: "{}",
+				CoverURL: &cover,
+			})
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+
+	for i, e := range errs {
+		require.NoErrorf(t, e,
+			"goroutine %d Upsert must not error — a lost INSERT race must be recovered as UPDATE", i)
+	}
+	assert.Equal(t, 1, countExtMetaRows(t, db, 42, "tmdb"),
+		"concurrent Upserts of the same (media_item_id, provider) must converge to exactly one row")
 }

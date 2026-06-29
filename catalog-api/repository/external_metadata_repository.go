@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"catalogizer/database"
@@ -87,31 +88,77 @@ func (r *ExternalMetadataRepository) GetByProvider(ctx context.Context, provider
 	return em, nil
 }
 
-// Upsert creates or updates external metadata by provider + media_item_id.
+// Upsert creates or updates external metadata keyed by (media_item_id, provider).
+//
+// A UNIQUE(media_item_id, provider) index (migration v20) guarantees at most one
+// row per pair. Under concurrent enrichment two callers can both observe no
+// existing row and both attempt an INSERT; the index lets only one win. The
+// loser's INSERT fails with a unique-constraint violation, which we recover by
+// re-reading the now-present row and switching to UPDATE — so the net result is
+// exactly one row, never a duplicate, and the race never surfaces as an error to
+// the caller. The index is the real guarantee; this fallback keeps the contended
+// path correct and silent.
 func (r *ExternalMetadataRepository) Upsert(ctx context.Context, em *models.ExternalMetadata) error {
 	existing, err := r.findByItemAndProvider(ctx, em.MediaItemID, em.Provider)
 	if err != nil {
 		return err
 	}
-
 	if existing != nil {
-		query := `UPDATE external_metadata SET
-			external_id = ?, data = ?, rating = ?, review_url = ?,
-			cover_url = ?, trailer_url = ?, last_fetched = ?
-		WHERE id = ?`
-		_, err := r.db.ExecContext(ctx, query,
-			em.ExternalID, em.Data, em.Rating, em.ReviewURL,
-			em.CoverURL, em.TrailerURL, time.Now(), existing.ID,
-		)
-		if err != nil {
-			return fmt.Errorf("update external metadata: %w", err)
-		}
-		em.ID = existing.ID
-		return nil
+		return r.update(ctx, em, existing.ID)
 	}
 
-	_, err = r.Create(ctx, em)
-	return err
+	if _, err := r.Create(ctx, em); err != nil {
+		if !isUniqueViolation(err) {
+			return err
+		}
+		// Lost the INSERT race: a concurrent caller created the row first. Re-read
+		// it and UPDATE so this caller's data still lands and no duplicate remains.
+		existing, ferr := r.findByItemAndProvider(ctx, em.MediaItemID, em.Provider)
+		if ferr != nil {
+			return ferr
+		}
+		if existing == nil {
+			// Row vanished between the conflict and the re-read (e.g. a concurrent
+			// delete); surface the original insert error rather than guessing.
+			return err
+		}
+		return r.update(ctx, em, existing.ID)
+	}
+	return nil
+}
+
+// update writes em over the existing row identified by id and refreshes its
+// last_fetched timestamp.
+func (r *ExternalMetadataRepository) update(ctx context.Context, em *models.ExternalMetadata, id int64) error {
+	query := `UPDATE external_metadata SET
+		external_id = ?, data = ?, rating = ?, review_url = ?,
+		cover_url = ?, trailer_url = ?, last_fetched = ?
+	WHERE id = ?`
+
+	now := time.Now()
+	if _, err := r.db.ExecContext(ctx, query,
+		em.ExternalID, em.Data, em.Rating, em.ReviewURL,
+		em.CoverURL, em.TrailerURL, now, id,
+	); err != nil {
+		return fmt.Errorf("update external metadata: %w", err)
+	}
+	em.ID = id
+	em.LastFetched = now
+	return nil
+}
+
+// isUniqueViolation reports whether err is a unique-constraint violation from
+// either SQLite ("UNIQUE constraint failed: ...") or PostgreSQL ("duplicate key
+// value violates unique constraint ..."). Matches the portable detection already
+// used in the handlers layer (e.g. handlers/user_handler.go).
+func isUniqueViolation(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "unique constraint failed") ||
+		strings.Contains(msg, "duplicate key value") ||
+		strings.Contains(msg, "violates unique constraint")
 }
 
 // Delete removes external metadata by ID.
