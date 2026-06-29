@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Status</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<h1 id="android-tv-player-validation-findings">Android TV Player
+Validation — Findings</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-06-29T16:30:00Z <strong>Device:</strong> MIBOX4 <span
+class="citation"
+data-cites="192.168.0.214:5555">@192.168.0.214:5555</span> (Android TV,
+SDK 28) <strong>Authority:</strong> Operator mandate (physical proof all
+players work, no bluff) + §11.4.107 (AV liveness battery) + §11.4.117
+(pixel-oracle) + §11.4.143 (real-user journey) + §11.4.138
+(operator-escape → bluff-audit + permanent guard) + §11.4.102
+(systematic-debug).</p>
+<h2 id="operator-action-items-read-first">Operator action items (read
+first)</h2>
+<table>
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 35%" />
+<col style="width: 47%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Item</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Video player crashes 100% on launch</strong> — release
+blocker</td>
+<td>ROOT-CAUSED, fix in progress</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="critical-finding-video-playback-is-completely-broken-11.4.107-caught-it">CRITICAL
+FINDING — video playback is completely broken (§11.4.107 caught it)</h2>
+<h3 id="what-was-tested-real-user-journey-11.4.143">What was tested
+(real user journey, §11.4.143)</h3>
+<p>Launched app → pixel-oracle login (§11.4.117) → home screen rendered
+with <strong>real TMDB covers</strong> (Captain America + Iron Man
+posters — the cover-fix arc PROVEN on-device, evidence
+<code>PROOF_covers_render_captain_america_ironman.png</code>) → D-pad to
+“001 - Captain America - The First Avenger” → detail screen (⭐7.0, real
+backdrop, “Play Now”) → selected “Play Now”.</p>
+<h3 id="the-defect-fact-captured-crash-not-a-guess">The defect (FACT —
+captured crash, not a guess)</h3>
+<p><code>Play Now</code> launches <code>ExoTvPlayerActivity</code>
+(TVNavigation.kt:153). It <strong>crashes instantly</strong> on
+<code>onCreate</code> and the app dies back to the TV launcher home
+screen. Captured logcat (<code>player_crash_log.txt</code>):</p>
+<pre><code>java.lang.IllegalStateException: You need to use a Theme.AppCompat theme (or descendant)
+  with this activity.
+  at androidx.appcompat.app.AppCompatDelegateImpl.createSubDecor
+  at com.catalogizer.androidtv.ui.player.ExoTvPlayerActivity.onCreate(ExoTvPlayerActivity.kt:49)
+Process com.catalogizer.androidtv (pid 7315) has died: fore TOP</code></pre>
+<h3 id="root-cause-11.4.102">Root cause (§11.4.102)</h3>
+<ul>
+<li><code>ExoTvPlayerActivity : AppCompatActivity()</code> (line 40) →
+<code>setContentView(...)</code> (line 49) requires a
+<code>Theme.AppCompat</code> descendant theme.</li>
+<li>Manifest assigns it <code>@style/Theme.CatalogizerTV.Player</code> →
+parent <code>Theme.CatalogizerTV</code> → parent
+<strong><code>Theme.Leanback</code></strong> (NOT an AppCompat
+descendant). → <code>setContentView</code> throws.</li>
+<li>The other two players (<code>MediaPlayerActivity</code>,
+<code>VLCPlayerActivity</code>) extend <code>ComponentActivity()</code>
+— they tolerate the Leanback theme. Only
+<code>ExoTvPlayerActivity</code> (the one “Play Now” uses) is
+incompatible. <strong>So video playback has NEVER worked on this
+build</strong> — every user who presses Play is kicked to the
+launcher.</li>
+</ul>
+<h3 id="why-prior-testing-missed-it-11.4.138-operator-escape-class">Why
+prior testing missed it (§11.4.138 operator-escape class)</h3>
+<p>The prior HelixQA campaign drove navigation but never actually
+pressed Play + verified the player rendered a frame (it reported “100%
+coverage, 0 crashes” because the crash happens in a SEPARATE activity
+that returns to the launcher — not an in-app ANR/crash the foreground
+monitor saw). The §11.4.107 mandate (drive the real journey, verify
+genuine playback, don’t trust “launched”) is exactly what exposed this.
+A permanent §11.4.135 regression guard is required as part of the
+fix.</p>
+<h3 id="fix-in-progress-tdd-11.4.43-11.4.115-red-on-broken-artifact">Fix
+(in progress, TDD §11.4.43 + §11.4.115 RED-on-broken-artifact)</h3>
+<p>Change <code>ExoTvPlayerActivity</code> to extend
+<code>ComponentActivity</code> (matching the working
+<code>MediaPlayerActivity</code>/<code>VLCPlayerActivity</code>
+pattern). <code>ComponentActivity</code> supports
+<code>setContentView</code>. Then re-validate the full §11.4.107 battery
+on-device.</p>
+<h2 id="proven-working-captured-evidence">Proven working (captured
+evidence)</h2>
+<ul>
+<li><strong>Login</strong> (§11.4.117 pixel-oracle): authenticated,
+catalog fetched (31 okhttp log lines).</li>
+<li><strong>Cover rendering</strong> (the session’s cover-fix arc,
+proven on the real device): Captain America + Iron Man real TMDB posters
+on the home shelf —
+<code>PROOF_covers_render_captain_america_ironman.png</code>.</li>
+<li><strong>Browse → detail journey</strong>: D-pad navigation, detail
+screen with rating/backdrop/Play.</li>
+<li><strong>API stream endpoint</strong>:
+<code>/api/v1/entities/18/stream</code> returns a real 4.6GB mkv
+stream_url; the API streams real bytes (HTTP 206, video/x-matroska;
+~950KB/s warm).</li>
+</ul>
+<h2 id="pending-after-the-player-fix">Pending (after the player
+fix)</h2>
+<ul>
+<li>Re-run §11.4.107 battery on the fixed player (freeze-oracle,
+decoder-health, UI controls).</li>
+<li>Audio (mp3) playback.</li>
+<li>Book/comic/image: build the missing readers (Phase 2, image-viewer +
+comic-pages API already built by parallel subagents this session), then
+validate.</li>
+</ul>
+<h2 id="evidence-files">Evidence files</h2>
+<table>
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Proves</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PROOF_covers_render_captain_america_ironman.png</code></td>
+<td>Real TMDB posters render on-device</td>
+</tr>
+<tr>
+<td><code>06_after_select.png</code></td>
+<td>Detail screen (real journey)</td>
+</tr>
+<tr>
+<td><code>07_player_launched.png</code></td>
+<td>Crash → back at TV launcher</td>
+</tr>
+<tr>
+<td><code>player_crash_log.txt</code></td>
+<td>The IllegalStateException theme crash</td>
+</tr>
+<tr>
+<td><code>playback_attempt_recording.mp4</code></td>
+<td>Window-scoped recording of the attempt</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

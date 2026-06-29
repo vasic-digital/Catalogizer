@@ -748,6 +748,11 @@ func main() {
 	// Cover handler for placeholder SVGs and cover image serving
 	coverHandler := root_handlers.NewCoverHandler(coverArtService).WithQualityRepository(imageQualityRepo)
 
+	// Comic-pages handler: pages through .cbz/.cbr archives for the
+	// reader clients. Resolves the entity's archive file via the same
+	// MediaFileRepository StreamEntity uses.
+	comicPagesHandler := root_handlers.NewComicPagesHandler(mediaFileRepo)
+
 	// Media entity handler for structured media browsing
 	mediaEntityHandler := root_handlers.NewMediaEntityHandler(mediaItemRepo, mediaFileRepo, extMetaRepo, userMetaRepo, databaseDB)
 	mediaEntityHandler.SetCoverArtService(coverArtService)
@@ -1472,6 +1477,11 @@ func main() {
 			entityGroup.GET("/:id/duplicates", mediaEntityHandler.GetEntityDuplicates)
 			entityGroup.GET("/:id/stream", mediaEntityHandler.StreamEntity)
 			entityGroup.GET("/:id/download", mediaEntityHandler.DownloadEntity)
+
+			// Comic reader: list pages in a .cbz/.cbr archive and
+			// stream an individual page image by 0-based index.
+			entityGroup.GET("/:id/pages", comicPagesHandler.ListComicPages)
+			entityGroup.GET("/:id/pages/:n", comicPagesHandler.GetComicPage)
 			entityGroup.GET("/:id/install-info", mediaEntityHandler.GetInstallInfo)
 			entityGroup.POST("/:id/metadata/refresh", mediaEntityHandler.RefreshEntityMetadata)
 			entityGroup.PUT("/:id/user-metadata", mediaEntityHandler.UpdateUserMetadata)

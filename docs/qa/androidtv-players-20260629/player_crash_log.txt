@@ -1,0 +1,25 @@
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at android.app.servertransaction.TransactionExecutor.executeCallbacks(TransactionExecutor.java:108)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at android.app.servertransaction.TransactionExecutor.execute(TransactionExecutor.java:68)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:1809)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at android.os.Handler.dispatchMessage(Handler.java:106)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at android.os.Looper.loop(Looper.java:193)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at android.app.ActivityThread.main(ActivityThread.java:6680)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at java.lang.reflect.Method.invoke(Native Method)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:493)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:858)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: Caused by: java.lang.IllegalStateException: You need to use a Theme.AppCompat theme (or descendant) with this activity.
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at androidx.appcompat.app.AppCompatDelegateImpl.createSubDecor(AppCompatDelegateImpl.java:926)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at androidx.appcompat.app.AppCompatDelegateImpl.ensureSubDecor(AppCompatDelegateImpl.java:889)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at androidx.appcompat.app.AppCompatDelegateImpl.setContentView(AppCompatDelegateImpl.java:772)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at androidx.appcompat.app.AppCompatActivity.setContentView(AppCompatActivity.java:197)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at com.catalogizer.androidtv.ui.player.ExoTvPlayerActivity.onCreate(ExoTvPlayerActivity.kt:49)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at android.app.Activity.performCreate(Activity.java:7144)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at android.app.Activity.performCreate(Activity.java:7135)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1271)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:2894)
+06-29 15:11:37.403  7315  7315 E AndroidRuntime: 	... 11 more
+06-29 15:11:37.801  3202  4922 W ActivityManager:   Force finishing activity com.catalogizer.androidtv/.ui.player.ExoTvPlayerActivity
+06-29 15:11:37.812  3804  3976 I MitvPolicyDatabaseManager: updatePackageUsage com.catalogizer.androidtv/com.catalogizer.androidtv.ui.player.ExoTvPlayerActivity (0,1,0)
+06-29 15:11:37.919  3202  3274 E InputDispatcher: channel '90fdcdc com.catalogizer.androidtv/com.catalogizer.androidtv.ui.MainActivity (server)' ~ Channel is unrecoverably broken and will be disposed!
+06-29 15:11:37.924  3202  4913 I ActivityManager: Process com.catalogizer.androidtv (pid 7315) has died: fore TOP 
+06-29 15:11:40.204  3804  3976 I MitvPolicyDatabaseManager: updatePackageUsage com.catalogizer.androidtv/com.catalogizer.androidtv.ui.player.ExoTvPlayerActivity (1,0,0)
