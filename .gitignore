@@ -390,3 +390,7 @@ docs/qa/**/*.png
 
 # HelixQA runtime session logs (§11.4.30 — runtime derivative, not reference)
 docs/reports/qa-sessions/**/helixqa/*.log
+.firebase/
+
+# §11.4.173 brought-back container build artifacts (recreatable via scripts/build_in_container.sh, §11.4.77)
+deploy/artifacts/
